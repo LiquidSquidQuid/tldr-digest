@@ -88,10 +88,22 @@ body::before{
    NAV
    ═══════════════════════════ */
 .nav{
-  position:sticky;top:0;z-index:100;
-  background:rgba(245,241,234,.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  border-bottom:1px solid var(--border);
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:transparent;backdrop-filter:blur(0);-webkit-backdrop-filter:blur(0);
+  border-bottom:1px solid transparent;
+  transition:background .3s,border-color .3s,backdrop-filter .3s;
 }
+.nav.nav-scrolled{
+  background:rgba(245,241,234,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-bottom-color:var(--border);
+}
+/* Nav text color: white on dark hero, dark when scrolled */
+.nav .nav-brand,.nav .nav-links a,.nav .btn-ghost{color:#fff;border-color:rgba(255,255,255,.2)}
+.nav.nav-scrolled .nav-brand{color:var(--ink)}
+.nav.nav-scrolled .nav-links a{color:var(--text-2)}
+.nav.nav-scrolled .nav-links a:hover{color:var(--ink)}
+.nav.nav-scrolled .btn-ghost{color:var(--ink);border-color:var(--border-strong)}
+.nav.nav-scrolled .btn-ghost:hover{background:var(--surface);border-color:var(--ink)}
 .nav-inner{
   display:flex;align-items:center;justify-content:space-between;
   max-width:1200px;margin:0 auto;padding:12px 24px;gap:16px;
@@ -119,82 +131,71 @@ body::before{
 .btn-primary:hover{background:var(--accent)}
 
 /* ═══════════════════════════
-   HERO
+   HERO — Dark gradient editorial
    ═══════════════════════════ */
 .hero{
   position:relative;overflow:hidden;
-  padding:80px 0 60px;
+  background:linear-gradient(155deg,#0c0a1e 0%,#1a1145 30%,#251660 55%,#14102e 100%);
+  padding:140px 0 100px;text-align:center;
 }
-.hero-aurora{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
-.hero-aurora .orb{position:absolute;border-radius:50%;filter:blur(100px);opacity:.35}
-.hero-aurora .orb-1{
-  width:600px;height:600px;top:-200px;left:-100px;
-  background:radial-gradient(circle,rgba(91,77,255,.4),transparent 70%);
-  animation:float 8s ease-in-out infinite;
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  background-repeat:repeat;background-size:256px 256px;opacity:.5;pointer-events:none;
 }
-.hero-aurora .orb-2{
-  width:500px;height:500px;top:-100px;right:-150px;
-  background:radial-gradient(circle,rgba(197,74,158,.3),transparent 70%);
-  animation:float-delay 10s ease-in-out infinite;
+.hero::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:120px;
+  background:linear-gradient(to bottom,transparent,var(--bg));pointer-events:none;
 }
-.hero-aurora .orb-3{
-  width:400px;height:400px;bottom:-100px;left:30%;
-  background:radial-gradient(circle,rgba(255,107,61,.25),transparent 70%);
-  animation:float 12s ease-in-out infinite;
+/* Subtle glow orbs behind hero text */
+.hero-glow{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.hero-glow .orb{position:absolute;border-radius:50%;filter:blur(120px);opacity:.25}
+.hero-glow .orb-1{
+  width:500px;height:500px;top:-150px;left:15%;
+  background:radial-gradient(circle,rgba(91,77,255,.5),transparent 70%);
+  animation:float 10s ease-in-out infinite;
+}
+.hero-glow .orb-2{
+  width:400px;height:400px;top:-50px;right:10%;
+  background:radial-gradient(circle,rgba(197,74,158,.35),transparent 70%);
+  animation:float-delay 12s ease-in-out infinite;
 }
 .hero-inner{
   position:relative;z-index:1;
-  display:grid;grid-template-columns:1fr 420px;gap:60px;align-items:center;
-  max-width:1200px;margin:0 auto;padding:0 24px;
+  max-width:800px;margin:0 auto;padding:0 24px;
 }
-.hero-eyebrow{
-  display:inline-flex;align-items:center;gap:8px;
-  background:var(--surface);border:1px solid var(--border);border-radius:100px;
-  padding:6px 16px 6px 10px;font-size:12px;font-weight:600;color:var(--text-2);
-  font-family:var(--mono);margin-bottom:24px;width:fit-content;
-}
-.live-dot{
-  width:8px;height:8px;border-radius:50%;background:#22c55e;
-  animation:pulse 2s ease-in-out infinite;flex-shrink:0;
+.hero-date{
+  font-family:var(--mono);font-size:12px;font-weight:500;
+  letter-spacing:.15em;text-transform:uppercase;
+  color:rgba(255,255,255,.4);margin-bottom:32px;
 }
 .hero h1{
-  font-family:var(--display);font-weight:400;font-size:clamp(36px,4.5vw,56px);
-  line-height:1.1;letter-spacing:-.03em;margin-bottom:20px;
+  font-family:var(--display);font-weight:300;font-size:clamp(42px,6vw,72px);
+  line-height:1.05;letter-spacing:-.03em;color:#fff;margin-bottom:24px;
 }
 .hero h1 em{
-  font-style:italic;
-  background:linear-gradient(135deg,var(--accent),var(--accent-2));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  font-style:italic;font-weight:400;
+  color:var(--accent-3);
 }
-.hero-lede{font-size:17px;color:var(--text-2);line-height:1.6;max-width:520px;margin-bottom:28px}
-.hero-actions{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
-.hero-actions .btn-primary{padding:12px 24px;font-size:14px;border-radius:12px}
-.hero-actions .btn-ghost{padding:12px 24px;font-size:14px;border-radius:12px}
-.hero-meta{font-size:12px;color:var(--text-3);font-family:var(--mono)}
-
-/* Pick stack cards */
-.pick-stack{
-  position:relative;width:100%;height:400px;
+.hero-stats-line{
+  font-family:var(--mono);font-size:13px;
+  color:rgba(255,255,255,.45);letter-spacing:.02em;margin-bottom:40px;
 }
-.pick-card{
-  position:absolute;width:280px;padding:20px;
-  background:var(--surface);border:1px solid var(--border);border-radius:16px;
-  box-shadow:0 8px 32px rgba(20,19,26,.08);
-  transition:transform .3s ease;
+.hero-actions{display:flex;gap:12px;justify-content:center;margin-bottom:24px;flex-wrap:wrap}
+.btn-hero-primary{
+  padding:14px 28px;border-radius:12px;font-size:15px;font-weight:700;
+  background:#fff;color:var(--ink);transition:all .15s;
+  display:inline-flex;align-items:center;gap:6px;
 }
-.pick-card:nth-child(1){top:0;left:20px;animation:card-float-1 6s ease-in-out infinite}
-.pick-card:nth-child(2){top:40px;left:80px;animation:card-float-2 7s ease-in-out infinite}
-.pick-card:nth-child(3){top:100px;left:30px;animation:card-float-3 5s ease-in-out infinite}
-.pick-card:nth-child(4){top:160px;left:90px;animation:card-float-4 8s ease-in-out infinite}
-.pick-card .pick-rank{
-  font-family:var(--display);font-size:11px;font-weight:700;color:var(--accent);
-  text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;
+.btn-hero-primary:hover{background:var(--accent-tint);color:var(--accent)}
+.btn-hero-ghost{
+  padding:14px 28px;border-radius:12px;font-size:15px;font-weight:600;
+  border:1px solid rgba(255,255,255,.2);color:#fff;transition:all .15s;
 }
-.pick-card .pick-title{font-size:14px;font-weight:600;line-height:1.35;margin-bottom:8px;color:var(--ink)}
-.pick-card .pick-meta{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-3)}
-.pick-card .stream-chip{
-  display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;
-  text-transform:uppercase;letter-spacing:.04em;color:#fff;
+.btn-hero-ghost:hover{border-color:#fff;background:rgba(255,255,255,.05)}
+.hero-tagline{
+  font-size:12px;color:rgba(255,255,255,.3);
+  font-family:var(--mono);letter-spacing:.04em;
 }
 
 /* ═══════════════════════════
@@ -422,20 +423,32 @@ body::before{
 .stream-card p{font-size:12px;color:var(--text-3);line-height:1.4}
 
 /* ═══════════════════════════
-   HOW IT WORKS (04)
+   HOW IT WORKS (04) — Dark panel
    ═══════════════════════════ */
-.steps{display:flex;flex-direction:column;gap:48px}
+.section-dark{
+  background:linear-gradient(135deg,var(--ink),var(--accent-deep));
+  color:#fff;position:relative;overflow:hidden;
+}
+.section-dark::before{
+  content:'';position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  background-repeat:repeat;background-size:256px 256px;opacity:.5;pointer-events:none;
+}
+.section-dark .section-num{color:rgba(255,255,255,.35)}
+.section-dark .section-heading{color:#fff}
+.section-dark .section-sub{color:rgba(255,255,255,.55)}
+.steps{display:flex;flex-direction:column;gap:48px;position:relative;z-index:1}
 .step{display:grid;grid-template-columns:120px 1fr;gap:32px;align-items:start}
 .step-num{
   font-family:var(--display);font-style:italic;font-size:64px;font-weight:300;
-  line-height:1;color:var(--accent);opacity:.5;
+  line-height:1;color:var(--accent-3);opacity:.6;
 }
-.step h3{font-size:18px;font-weight:700;margin-bottom:6px}
-.step p{font-size:14px;color:var(--text-2);line-height:1.5;margin-bottom:8px}
+.step h3{font-size:18px;font-weight:700;margin-bottom:6px;color:#fff}
+.step p{font-size:14px;color:rgba(255,255,255,.65);line-height:1.5;margin-bottom:8px}
 .step code{
-  font-family:var(--mono);font-size:11px;color:var(--text-3);
-  background:var(--surface-2);padding:4px 8px;border-radius:6px;
-  display:inline-block;
+  font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.5);
+  background:rgba(255,255,255,.06);padding:4px 8px;border-radius:6px;
+  display:inline-block;border:1px solid rgba(255,255,255,.08);
 }
 
 /* ═══════════════════════════
@@ -489,11 +502,7 @@ body::before{
    RESPONSIVE
    ═══════════════════════════ */
 @media(max-width:900px){
-  .hero-inner{grid-template-columns:1fr;text-align:center}
-  .hero-lede{margin-left:auto;margin-right:auto}
-  .hero-actions{justify-content:center}
-  .hero-eyebrow{margin-left:auto;margin-right:auto}
-  .pick-stack{display:none}
+  .hero{padding:100px 0 80px}
   .browser-content{grid-template-columns:1fr}
   .browser-right{border-top:1px solid var(--border)}
   .problem-grid{grid-template-columns:1fr}
@@ -532,49 +541,21 @@ body::before{
   </div>
 </nav>
 
-<!-- ═══════ HERO ═══════ -->
-<section class="hero">
-  <div class="hero-aurora">
+<!-- ═══════ HERO — Dark gradient editorial ═══════ -->
+<section class="hero" id="hero">
+  <div class="hero-glow">
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
   </div>
   <div class="hero-inner">
-    <div class="hero-content">
-      <div class="hero-eyebrow">
-        <span class="live-dot"></span>
-        <span id="hero-eyebrow-text">Today's brief &middot; loading&hellip;</span>
-      </div>
-      <h1>The five-minute<br>brief, <em>written &amp;<br>picked</em> by Claude.</h1>
-      <p class="hero-lede">Every morning Claude reads 12 TLDR newsletters, deduplicates the noise, picks the top stories, and adds a sharp, honest take on each.</p>
-      <div class="hero-actions">
-        <a href="reader.html" class="btn-primary">Read today's brief &rarr;</a>
-        <a href="#how" class="btn-ghost">How it works</a>
-      </div>
-      <p class="hero-meta" id="hero-meta">Updated today</p>
+    <div class="hero-date" id="hero-date">Loading&hellip;</div>
+    <h1>Today's brief is<br><em>waiting</em></h1>
+    <p class="hero-stats-line" id="hero-stats-line">&mdash;</p>
+    <div class="hero-actions">
+      <a href="reader.html" class="btn-hero-primary">Read today's brief &rarr;</a>
+      <a href="#streams" class="btn-hero-ghost">See all streams</a>
     </div>
-    <div class="pick-stack" id="pick-stack">
-      <div class="pick-card">
-        <div class="pick-rank">Pick #1</div>
-        <div class="pick-title">Loading top picks&hellip;</div>
-        <div class="pick-meta"><span class="stream-chip" style="background:var(--col-ai)">AI</span><span>3 min</span></div>
-      </div>
-      <div class="pick-card">
-        <div class="pick-rank">Pick #2</div>
-        <div class="pick-title">Loading&hellip;</div>
-        <div class="pick-meta"><span class="stream-chip" style="background:var(--col-dev)">Dev</span><span>2 min</span></div>
-      </div>
-      <div class="pick-card">
-        <div class="pick-rank">Pick #3</div>
-        <div class="pick-title">Loading&hellip;</div>
-        <div class="pick-meta"><span class="stream-chip" style="background:var(--col-tldr)">Main</span><span>4 min</span></div>
-      </div>
-      <div class="pick-card">
-        <div class="pick-rank">Pick #4</div>
-        <div class="pick-title">Loading&hellip;</div>
-        <div class="pick-meta"><span class="stream-chip" style="background:var(--col-infosec)">InfoSec</span><span>2 min</span></div>
-      </div>
-    </div>
+    <p class="hero-tagline">no signup &middot; no email &middot; always free</p>
   </div>
 </section>
 
@@ -867,7 +848,7 @@ body::before{
 </section>
 
 <!-- ═══════ HOW IT WORKS (04) ═══════ -->
-<section class="section" id="how">
+<section class="section section-dark" id="how">
   <div class="wrap">
     <div class="section-num">04 &mdash; How it works</div>
     <h2 class="section-heading">From inbox to brief<br>in four steps.</h2>
@@ -943,37 +924,54 @@ body::before{
 <!-- ═══════ DATA SCRIPT ═══════ -->
 <script>
 (async function() {
-  const SUPABASE_URL = 'https://zuxznsgefrjkxokldoah.supabase.co';
-  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1eHpuc2dlZnJqa3hva2xkb2FoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MzA1MjIsImV4cCI6MjA5MzQwNjUyMn0.QU4csmfWGbRmCZUbcZWq142x44T1kR7oh-pwo9eMofE';
+  const SUPABASE_URL = ‘https://zuxznsgefrjkxokldoah.supabase.co’;
+  const ANON_KEY = ‘eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1eHpuc2dlZnJqa3hva2xkb2FoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MzA1MjIsImV4cCI6MjA5MzQwNjUyMn0.QU4csmfWGbRmCZUbcZWq142x44T1kR7oh-pwo9eMofE’;
 
   const STREAMS = {
-    'TLDR':                      { id: 'tldr',     short: 'Main',     cssVar: '--col-tldr' },
-    'TLDR AI':                   { id: 'ai',       short: 'AI',       cssVar: '--col-ai' },
-    'TLDR Dev':                  { id: 'dev',      short: 'Dev',      cssVar: '--col-dev' },
-    'TLDR Information Security': { id: 'infosec',  short: 'InfoSec',  cssVar: '--col-infosec' },
-    'TLDR IT':                   { id: 'it',       short: 'IT',       cssVar: '--col-it' },
-    'TLDR Fintech':              { id: 'fintech',  short: 'Fintech',  cssVar: '--col-fintech' },
-    'TLDR Design':               { id: 'design',   short: 'Design',   cssVar: '--col-design' },
-    'TLDR Crypto':               { id: 'crypto',   short: 'Crypto',   cssVar: '--col-crypto' },
-    'TLDR Founders':             { id: 'founders', short: 'Founders', cssVar: '--col-founders' },
-    'TLDR Marketing':            { id: 'marketing',short: 'Marketing',cssVar: '--col-marketing' },
-    'TLDR DevOps':               { id: 'devops',   short: 'DevOps',   cssVar: '--col-devops' },
-    'TLDR Data':                 { id: 'data',     short: 'Data',     cssVar: '--col-data' },
+    ‘TLDR’:                      { id: ‘tldr’,     short: ‘Main’,     cssVar: ‘--col-tldr’ },
+    ‘TLDR AI’:                   { id: ‘ai’,       short: ‘AI’,       cssVar: ‘--col-ai’ },
+    ‘TLDR Dev’:                  { id: ‘dev’,      short: ‘Dev’,      cssVar: ‘--col-dev’ },
+    ‘TLDR Information Security’: { id: ‘infosec’,  short: ‘InfoSec’,  cssVar: ‘--col-infosec’ },
+    ‘TLDR IT’:                   { id: ‘it’,       short: ‘IT’,       cssVar: ‘--col-it’ },
+    ‘TLDR Fintech’:              { id: ‘fintech’,  short: ‘Fintech’,  cssVar: ‘--col-fintech’ },
+    ‘TLDR Design’:               { id: ‘design’,   short: ‘Design’,   cssVar: ‘--col-design’ },
+    ‘TLDR Crypto’:               { id: ‘crypto’,   short: ‘Crypto’,   cssVar: ‘--col-crypto’ },
+    ‘TLDR Founders’:             { id: ‘founders’, short: ‘Founders’, cssVar: ‘--col-founders’ },
+    ‘TLDR Marketing’:            { id: ‘marketing’,short: ‘Marketing’,cssVar: ‘--col-marketing’ },
+    ‘TLDR DevOps’:               { id: ‘devops’,   short: ‘DevOps’,   cssVar: ‘--col-devops’ },
+    ‘TLDR Data’:                 { id: ‘data’,     short: ‘Data’,     cssVar: ‘--col-data’ },
   };
 
   function getStreamInfo(name) {
-    return STREAMS[name] || { id: 'unknown', short: name, cssVar: '--col-tldr' };
+    return STREAMS[name] || { id: ‘unknown’, short: name, cssVar: ‘--col-tldr’ };
   }
 
   function escapeHTML(str) {
-    if (!str) return '';
-    const div = document.createElement('div');
+    if (!str) return ‘’;
+    const div = document.createElement(‘div’);
     div.textContent = str;
     return div.innerHTML;
   }
 
+  /* ── Nav scroll observer ── */
+  const nav = document.querySelector(‘.nav’);
+  const hero = document.getElementById(‘hero’);
+  if (hero && nav) {
+    const obs = new IntersectionObserver(([e]) => {
+      nav.classList.toggle(‘nav-scrolled’, !e.isIntersecting);
+    }, { threshold: 0, rootMargin: ‘-56px 0px 0px 0px’ });
+    obs.observe(hero);
+  }
+
+  /* ── Hero date line ── */
+  const now = new Date();
+  const dayNames = [‘SUNDAY’,’MONDAY’,’TUESDAY’,’WEDNESDAY’,’THURSDAY’,’FRIDAY’,’SATURDAY’];
+  const monthNames = [‘JANUARY’,’FEBRUARY’,’MARCH’,’APRIL’,’MAY’,’JUNE’,’JULY’,’AUGUST’,’SEPTEMBER’,’OCTOBER’,’NOVEMBER’,’DECEMBER’];
+  document.getElementById(‘hero-date’).textContent =
+    dayNames[now.getDay()] + ‘, ‘ + monthNames[now.getMonth()] + ‘ ‘ + now.getDate() + ‘ · ‘ + now.getFullYear();
+
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = now.toISOString().split(‘T’)[0];
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/digest_entries?digest_date=eq.${today}&select=*`,
       { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } }
@@ -981,7 +979,7 @@ body::before{
     const rows = await res.json();
 
     if (!Array.isArray(rows) || rows.length === 0) {
-      document.getElementById('hero-eyebrow-text').textContent = "Today's brief · no stories yet · check back soon";
+      document.getElementById(‘hero-stats-line’).textContent = "Today’s brief is brewing — check back soon";
       return;
     }
 
@@ -1010,49 +1008,26 @@ body::before{
       .filter(s => s.pick_rank != null)
       .sort((a, b) => a.pick_rank - b.pick_rank);
 
-    // -- Hero eyebrow --
-    document.getElementById('hero-eyebrow-text').textContent =
-      "Today’s brief · " + totalStories + " stories · ~" + Math.min(totalRead, 30) + " min read";
-
-    // -- Hero meta --
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-    document.getElementById('hero-meta').textContent =
-      'Updated ' + today + ' · ' + timeStr;
-
-    // -- Pick stack (top 4) --
-    const stackEl = document.getElementById('pick-stack');
-    if (picks.length > 0) {
-      const stackCards = stackEl.querySelectorAll('.pick-card');
-      for (let i = 0; i < Math.min(4, picks.length); i++) {
-        const p = picks[i];
-        const info = getStreamInfo(p.stream_name);
-        const card = stackCards[i];
-        if (!card) continue;
-        card.querySelector('.pick-rank').textContent = 'Pick #' + p.pick_rank;
-        card.querySelector('.pick-title').textContent = p.title;
-        const chip = card.querySelector('.stream-chip');
-        chip.textContent = info.short;
-        chip.style.background = 'var(' + info.cssVar + ')';
-        card.querySelector('.pick-meta span:last-child').textContent = (p.read_time || '3') + ' min';
-      }
-    }
+    // -- Hero stats line --
+    const picksCount = picks.length;
+    document.getElementById(‘hero-stats-line’).textContent =
+      totalStories + ‘ stories · ‘ + distinctStreams + ‘ streams · ‘ + picksCount + ‘ hand-picked picks’;
 
     // -- Browser preview: pick list (top 5) --
-    const listEl = document.getElementById('browser-pick-list');
+    const listEl = document.getElementById(‘browser-pick-list’);
     if (picks.length > 0) {
-      let listHTML = '';
+      let listHTML = ‘’;
       for (let i = 0; i < Math.min(5, picks.length); i++) {
         const p = picks[i];
         const info = getStreamInfo(p.stream_name);
         listHTML +=
-          '<div class="browser-pick-item">' +
-            '<div class="browser-pick-num">' + p.pick_rank + '</div>' +
-            '<div class="browser-pick-info">' +
-              '<h4>' + escapeHTML(p.title) + '</h4>' +
-              '<span>' + info.short + ' · ' + (p.read_time || '3') + ' min</span>' +
-            '</div>' +
-          '</div>';
+          ‘<div class="browser-pick-item">’ +
+            ‘<div class="browser-pick-num">’ + p.pick_rank + ‘</div>’ +
+            ‘<div class="browser-pick-info">’ +
+              ‘<h4>’ + escapeHTML(p.title) + ‘</h4>’ +
+              ‘<span>’ + info.short + ‘ · ‘ + (p.read_time || ‘3’) + ‘ min</span>’ +
+            ‘</div>’ +
+          ‘</div>’;
       }
       listEl.innerHTML = listHTML;
     }
@@ -1060,23 +1035,23 @@ body::before{
     // -- Browser preview: featured card (pick #1) --
     if (picks.length > 0) {
       const top = picks[0];
-      document.getElementById('featured-title').textContent = top.title;
-      document.getElementById('featured-summary').textContent = top.summary || 'No summary available.';
-      document.getElementById('featured-take').textContent = top.claude_take || 'No take available yet.';
+      document.getElementById(‘featured-title’).textContent = top.title;
+      document.getElementById(‘featured-summary’).textContent = top.summary || ‘No summary available.’;
+      document.getElementById(‘featured-take’).textContent = top.claude_take || ‘No take available yet.’;
     }
 
     // -- Stat band --
-    document.getElementById('stat-newsletters').textContent = distinctStreams;
-    document.getElementById('stat-stories').textContent = totalStories;
-    document.getElementById('stat-readtime').textContent = '~' + avgRead;
+    document.getElementById(‘stat-newsletters’).textContent = distinctStreams;
+    document.getElementById(‘stat-stories’).textContent = totalStories;
+    document.getElementById(‘stat-readtime’).textContent = ‘~’ + avgRead;
 
     // -- CTA sub --
-    document.getElementById('cta-sub').textContent =
+    document.getElementById(‘cta-sub’).textContent =
       "Today’s digest has " + totalStories + " stories from " + distinctStreams + " streams. Takes about " + Math.min(totalRead, 30) + " minutes.";
 
   } catch (err) {
-    console.error('Failed to fetch digest data:', err);
-    document.getElementById('hero-eyebrow-text').textContent = "Today’s brief · loading failed · try refreshing";
+    console.error(‘Failed to fetch digest data:’, err);
+    document.getElementById(‘hero-stats-line’).textContent = ‘loading failed — try refreshing’;
   }
 })();
 </script>
