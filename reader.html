@@ -266,11 +266,11 @@ body {
   padding: 0 24px;
 }
 .top-picks-card {
-  background: linear-gradient(135deg, var(--accent-tint) 0%, var(--surface) 60%, #f8f0ff 100%);
-  border: 1px solid var(--border);
+  background: linear-gradient(135deg, #1a1440 0%, #14102e 40%, #1e1245 100%);
+  border: 1px solid rgba(91,77,255,0.2);
   border-radius: var(--radius);
   padding: 24px;
-  box-shadow: var(--shadow);
+  box-shadow: 0 12px 40px -12px rgba(20,16,46,0.5), 0 2px 8px rgba(20,16,46,0.2);
 }
 .top-picks-label {
   font-family: var(--mono);
@@ -278,7 +278,7 @@ body {
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--accent);
+  color: #b4a9ff;
   margin-bottom: 16px;
   display: flex;
   align-items: center;
@@ -291,28 +291,34 @@ body {
   gap: 12px;
 }
 .pick-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
   border-radius: var(--radius-sm);
   padding: 14px 16px;
   cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s, background 0.3s;
   display: flex;
   flex-direction: column;
   gap: 6px;
   text-decoration: none;
-  color: inherit;
+  color: #e8e4f8;
 }
 .pick-card:hover {
-  border-color: var(--accent);
-  box-shadow: var(--shadow);
+  border-color: rgba(91,77,255,0.5);
+  box-shadow: 0 4px 20px rgba(91,77,255,0.15);
   transform: translateY(-1px);
+  background: rgba(255,255,255,0.1);
+}
+.pick-card.pick-expanded {
+  border-color: rgba(91,77,255,0.4);
+  background: rgba(255,255,255,0.1);
+  box-shadow: 0 4px 20px rgba(91,77,255,0.15);
 }
 .pick-card-rank {
   font-family: var(--mono);
   font-size: 0.62rem;
   font-weight: 500;
-  color: var(--accent);
+  color: #b4a9ff;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -321,14 +327,14 @@ body {
   font-size: 0.95rem;
   font-weight: 400;
   line-height: 1.3;
-  color: var(--text);
+  color: #f0ecff;
 }
 .pick-card-meta {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 0.7rem;
-  color: var(--text-3);
+  color: rgba(255,255,255,0.45);
 }
 .pick-card-stream {
   display: inline-flex;
@@ -340,6 +346,62 @@ body {
   height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
+}
+/* Pick card expand area */
+.pick-expand {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.35s ease;
+}
+.pick-card.pick-expanded .pick-expand {
+  grid-template-rows: 1fr;
+}
+.pick-expand-inner {
+  overflow: hidden;
+}
+.pick-expand-content {
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  margin-top: 8px;
+}
+.pick-take {
+  border-left: 3px solid #b4a9ff;
+  background: rgba(91,77,255,0.1);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 10px;
+}
+.pick-take .take-avatar {
+  background: linear-gradient(135deg, #5b4dff, #7c3aed);
+}
+.pick-take .take-text {
+  color: rgba(255,255,255,0.7);
+}
+.pick-card .pick-summary {
+  font-size: 0.84rem;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+.pick-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.pick-footer .story-link {
+  color: #b4a9ff;
+}
+.pick-chevron {
+  margin-left: auto;
+  color: rgba(255,255,255,0.3);
+  transition: transform 0.25s ease, color 0.25s ease;
+  flex-shrink: 0;
+}
+.pick-card.pick-expanded .pick-chevron {
+  transform: rotate(180deg);
+  color: #b4a9ff;
 }
 
 /* === MAIN LAYOUT === */
@@ -996,7 +1058,8 @@ function Hero({ dayLabel, totalStories, totalReadMin, streamCount }) {
   );
 }
 
-function TopPicks({ topPicks, storyById, streamById, onPickClick }) {
+function TopPicks({ topPicks, storyById, streamById }) {
+  const [expandedPick, setExpandedPick] = useState(null);
   if (!topPicks || topPicks.length === 0) return null;
   return (
     <div className="top-picks">
@@ -1012,19 +1075,24 @@ function TopPicks({ topPicks, storyById, streamById, onPickClick }) {
             const story = storyById[pick.id];
             const stream = streamById[pick.streamId];
             if (!story || !stream) return null;
+            const isExpanded = expandedPick === pick.id;
             return (
-              <a
+              <div
                 key={pick.id}
-                className="pick-card"
-                href={story.url || '#'}
-                target={story.url ? '_blank' : undefined}
-                rel="noopener noreferrer"
+                className={`pick-card${isExpanded ? ' pick-expanded' : ''}`}
                 onClick={(e) => {
-                  if (!story.url) e.preventDefault();
-                  onPickClick(pick.id);
+                  if (e.target.closest('a')) return;
+                  setExpandedPick(isExpanded ? null : pick.id);
                 }}
               >
-                <div className="pick-card-rank">#{i + 1} pick</div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                  <div className="pick-card-rank">#{i + 1} pick</div>
+                  <span className="pick-chevron">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </span>
+                </div>
                 <div className="pick-card-title">{story.title}</div>
                 <div className="pick-card-meta">
                   <span className="pick-card-stream">
@@ -1033,7 +1101,27 @@ function TopPicks({ topPicks, storyById, streamById, onPickClick }) {
                   </span>
                   <span>{story.readTime}m read</span>
                 </div>
-              </a>
+                <div className="pick-expand">
+                  <div className="pick-expand-inner">
+                    <div className="pick-expand-content">
+                      {story.summary && <p className="pick-summary">{story.summary}</p>}
+                      {story.take && (
+                        <div className="pick-take">
+                          <div className="take-avatar">C</div>
+                          <div className="take-text">{story.take}</div>
+                        </div>
+                      )}
+                      <div className="pick-footer">
+                        {story.url && (
+                          <a className="story-link" href={story.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                            Read source <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 9.5l7-7M4 2.5h5.5V8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             );
           })}
         </div>
@@ -1345,15 +1433,6 @@ function App() {
     setActiveStream(prev => prev === streamId ? null : streamId);
   }, []);
 
-  const handlePickClick = useCallback((storyId) => {
-    const el = document.getElementById(`story-${storyId}`);
-    if (!el) return;
-    // Use getBoundingClientRect + window.scrollTo for reliable scroll
-    const rect = el.getBoundingClientRect();
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const targetY = rect.top + scrollTop - 80; // 80px offset for nav
-    window.scrollTo({ top: targetY, behavior: 'smooth' });
-  }, []);
 
   if (loading) {
     return (
@@ -1404,7 +1483,6 @@ function App() {
         topPicks={data.topPicks}
         storyById={data.storyById}
         streamById={data.streamById}
-        onPickClick={handlePickClick}
       />
       <div className="main-layout">
         <Sidebar
