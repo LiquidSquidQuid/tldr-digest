@@ -2,251 +2,1083 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#111111">
-<title>The TLDR Digest</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TLDR Digest — The five-minute brief, written &amp; picked by Claude</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Geist:wght@300..900&family=Geist+Mono:wght@300..700&display=swap" rel="stylesheet">
 <style>
+/* ── Reset ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.6;overflow-x:hidden}
+img,svg{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font:inherit;cursor:pointer;border:none;background:none}
+ul{list-style:none}
+
+/* ── Tokens ── */
 :root {
-  --bg: #f8f7f4; --surface: #fff; --text: #1a1a1a; --text-2: #555;
-  --text-3: #888; --border: #e8e6e1; --border-strong: #d0cdc6;
-  --accent: #4A90D9; --masthead-bg: #111; --masthead-text: #f8f7f4;
-  --nav-bg: #f0eee9; --card-hover: #faf9f7;
-  --shadow: 0 1px 3px rgba(0,0,0,0.06); --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
-  --serif: 'Instrument Serif', Georgia, serif;
-  --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --bg: #f5f1ea; --bg-warm: #ede6db; --paper: #fdfbf6; --surface: #ffffff; --surface-2: #f8f4ec;
+  --ink: #14131a; --ink-2: #3a3640; --text-2: #54525e; --text-3: #8a8794;
+  --border: #e6dfd1; --border-strong: #cfc6b3;
+  --accent: #5b4dff; --accent-2: #c54a9e; --accent-3: #ff6b3d;
+  --accent-tint: #efebff; --accent-deep: #14102e;
+  --col-ai: #7c3aed; --col-dev: #047857; --col-infosec: #dc2626; --col-tldr: #2563eb;
+  --col-design: #d97706; --col-fintech: #0891b2; --col-founders: #db2777;
+  --col-devops: #6d28d9; --col-data: #047857; --col-it: #6366f1;
+  --col-crypto: #f97316; --col-marketing: #14b8a6;
+  --sans: 'Geist', system-ui, sans-serif;
+  --mono: 'Geist Mono', ui-monospace, monospace;
+  --display: 'Fraunces', Georgia, serif;
+  --shadow-sm: 0 1px 2px rgba(20, 19, 26, 0.04);
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0a0a0a; --surface: #161616; --text: #e8e6e1; --text-2: #a0a0a0;
-    --text-3: #666; --border: #222; --border-strong: #333;
-    --masthead-bg: #000; --masthead-text: #f0eee9;
-    --nav-bg: #111; --card-hover: #1a1a1a;
-    --shadow: 0 1px 3px rgba(0,0,0,0.2); --shadow-lg: 0 4px 12px rgba(0,0,0,0.3);
-  }
+
+/* ── Noise overlay ── */
+body::before{
+  content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  background-repeat:repeat;background-size:256px 256px;opacity:.4;
 }
-*{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased}
-.masthead{background:var(--masthead-bg);color:var(--masthead-text);text-align:center;padding:28px 20px 20px}
-.masthead-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.2em;opacity:.45;margin-bottom:6px}
-.masthead-title{font-family:var(--serif);font-size:2.4rem;font-weight:400;letter-spacing:-.01em;line-height:1.1}
-.masthead-date{font-size:.82rem;opacity:.55;margin-top:8px;font-style:italic}
-.stats-bar{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 16px;font-size:.72rem;font-weight:500;color:var(--text-3);background:var(--nav-bg);border-bottom:1px solid var(--border)}
-.dot{width:4px;height:4px;border-radius:50%;background:var(--text-3);display:inline-block}
-.tab-bar{display:flex;gap:8px;padding:14px 16px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;background:var(--nav-bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-.tab-bar::-webkit-scrollbar{display:none}
-.tab-btn{flex-shrink:0;padding:8px 16px;border:1.5px solid var(--border);border-radius:24px;background:var(--surface);color:var(--text-2);font-family:var(--sans);font-size:.78rem;font-weight:500;cursor:pointer;transition:all .15s ease;white-space:nowrap;-webkit-tap-highlight-color:transparent}
-.tab-btn:hover{border-color:var(--stream-color,var(--accent));color:var(--text)}
-.tab-btn.active{background:var(--stream-color,var(--accent));color:#fff;border-color:var(--stream-color,var(--accent));box-shadow:0 2px 8px color-mix(in srgb,var(--stream-color,var(--accent)) 30%,transparent)}
-.content{max-width:640px;margin:0 auto;padding:0 16px 40px}
-.stream-panel{display:none;flex-direction:column}
-.stream-panel.active{display:flex}
-.section-header{font-family:var(--sans);font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--text-3);padding:24px 0 10px;border-bottom:1.5px solid var(--border-strong);margin-bottom:14px}
-.stream-panel>div:first-child .section-header{padding-top:16px}
-.story-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:10px;cursor:pointer;transition:background .15s,box-shadow .15s,border-color .15s;-webkit-tap-highlight-color:transparent}
-.story-card:hover{background:var(--card-hover);box-shadow:var(--shadow-lg)}
-.story-card.expanded{border-color:var(--accent);box-shadow:var(--shadow-lg)}
-.story-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-.story-header-left{flex:1;min-width:0}
-.story-meta{margin-bottom:6px}
-.time-badge{font-size:.65rem;font-weight:500;padding:2px 8px;border-radius:6px;background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--text-3)}
-.story-title{font-family:var(--serif);font-size:1.15rem;font-weight:400;line-height:1.3;margin-bottom:4px}
-.story-preview{font-size:.85rem;color:var(--text-3);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.story-card.expanded .story-preview{display:none}
-.expand-icon{flex-shrink:0;width:24px;height:24px;display:flex;align-items:center;justify-content:center;color:var(--text-3);transition:transform .2s ease;margin-top:4px}
-.story-card.expanded .expand-icon{transform:rotate(180deg)}
-.story-detail{max-height:0;overflow:hidden;transition:max-height .35s ease,opacity .25s ease;opacity:0}
-.story-card.expanded .story-detail{max-height:2000px;opacity:1}
-.story-detail-inner{padding-top:14px;border-top:1px solid var(--border);margin-top:14px}
-.story-detail-text{font-size:.9rem;color:var(--text-2);line-height:1.75;white-space:pre-line}
-.story-detail-text p{margin-bottom:12px}
-.story-detail-text p:last-child{margin-bottom:0}
-.read-more{display:inline-block;margin-top:14px;font-size:.78rem;font-weight:500;color:var(--accent);text-decoration:none}
-.read-more:hover{opacity:.7}
-.no-detail{font-size:.85rem;color:var(--text-3);font-style:italic}
-.footer{text-align:center;padding:28px 16px;font-size:.7rem;color:var(--text-3);border-top:1px solid var(--border)}
-.empty-state{text-align:center;padding:80px 20px}
-.empty-icon{font-size:3rem;margin-bottom:16px}
-.empty-title{font-family:var(--serif);font-size:1.5rem;margin-bottom:8px}
-.empty-body{font-size:.9rem;color:var(--text-2);max-width:360px;margin:0 auto}
-.loading{text-align:center;padding:60px 20px;color:var(--text-3);font-size:.9rem}
-.loading .spinner{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
-@keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:480px){.masthead-title{font-size:1.9rem}.content{padding:0 12px 32px}.story-card{padding:15px;border-radius:10px}.story-title{font-size:1.05rem}.tab-btn{padding:7px 13px;font-size:.74rem}}
+
+/* ── Utility ── */
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.gradient-text{background:linear-gradient(135deg,var(--accent),var(--accent-2),var(--accent-3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+/* ── Keyframes ── */
+@keyframes float{
+  0%,100%{transform:translateY(0) scale(1)}
+  50%{transform:translateY(-20px) scale(1.05)}
+}
+@keyframes float-delay{
+  0%,100%{transform:translateY(0) scale(1)}
+  50%{transform:translateY(-15px) scale(1.03)}
+}
+@keyframes pulse{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:.5;transform:scale(.85)}
+}
+@keyframes scroll{
+  0%{transform:translateX(0)}
+  100%{transform:translateX(-50%)}
+}
+@keyframes fade-up{
+  from{opacity:0;transform:translateY(24px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@keyframes card-float-1{
+  0%,100%{transform:rotate(-6deg) translateY(0)}
+  50%{transform:rotate(-6deg) translateY(-8px)}
+}
+@keyframes card-float-2{
+  0%,100%{transform:rotate(-3deg) translateY(0)}
+  50%{transform:rotate(-3deg) translateY(-10px)}
+}
+@keyframes card-float-3{
+  0%,100%{transform:rotate(2deg) translateY(0)}
+  50%{transform:rotate(2deg) translateY(-6px)}
+}
+@keyframes card-float-4{
+  0%,100%{transform:rotate(5deg) translateY(0)}
+  50%{transform:rotate(5deg) translateY(-12px)}
+}
+
+/* ═══════════════════════════
+   NAV
+   ═══════════════════════════ */
+.nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(245,241,234,.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+}
+.nav-inner{
+  display:flex;align-items:center;justify-content:space-between;
+  max-width:1200px;margin:0 auto;padding:12px 24px;gap:16px;
+}
+.nav-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;letter-spacing:-.02em}
+.brand-mark{
+  width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  background:conic-gradient(from 135deg,var(--accent),var(--accent-2),var(--accent-3),var(--accent));
+  color:#fff;font-family:var(--display);font-style:italic;font-weight:700;font-size:16px;
+}
+.nav-links{display:flex;align-items:center;gap:28px}
+.nav-links a{font-size:13px;color:var(--text-2);font-weight:500;transition:color .15s}
+.nav-links a:hover{color:var(--ink)}
+.nav-cta{display:flex;align-items:center;gap:10px}
+.btn-ghost{
+  padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;
+  border:1px solid var(--border-strong);color:var(--ink);background:transparent;
+  transition:all .15s;display:inline-flex;align-items:center;
+}
+.btn-ghost:hover{background:var(--surface);border-color:var(--ink)}
+.btn-primary{
+  padding:8px 18px;border-radius:10px;font-size:13px;font-weight:600;
+  background:var(--ink);color:#fff;transition:all .15s;display:inline-flex;align-items:center;gap:4px;
+}
+.btn-primary:hover{background:var(--accent)}
+
+/* ═══════════════════════════
+   HERO
+   ═══════════════════════════ */
+.hero{
+  position:relative;overflow:hidden;
+  padding:80px 0 60px;
+}
+.hero-aurora{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.hero-aurora .orb{position:absolute;border-radius:50%;filter:blur(100px);opacity:.35}
+.hero-aurora .orb-1{
+  width:600px;height:600px;top:-200px;left:-100px;
+  background:radial-gradient(circle,rgba(91,77,255,.4),transparent 70%);
+  animation:float 8s ease-in-out infinite;
+}
+.hero-aurora .orb-2{
+  width:500px;height:500px;top:-100px;right:-150px;
+  background:radial-gradient(circle,rgba(197,74,158,.3),transparent 70%);
+  animation:float-delay 10s ease-in-out infinite;
+}
+.hero-aurora .orb-3{
+  width:400px;height:400px;bottom:-100px;left:30%;
+  background:radial-gradient(circle,rgba(255,107,61,.25),transparent 70%);
+  animation:float 12s ease-in-out infinite;
+}
+.hero-inner{
+  position:relative;z-index:1;
+  display:grid;grid-template-columns:1fr 420px;gap:60px;align-items:center;
+  max-width:1200px;margin:0 auto;padding:0 24px;
+}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--surface);border:1px solid var(--border);border-radius:100px;
+  padding:6px 16px 6px 10px;font-size:12px;font-weight:600;color:var(--text-2);
+  font-family:var(--mono);margin-bottom:24px;width:fit-content;
+}
+.live-dot{
+  width:8px;height:8px;border-radius:50%;background:#22c55e;
+  animation:pulse 2s ease-in-out infinite;flex-shrink:0;
+}
+.hero h1{
+  font-family:var(--display);font-weight:400;font-size:clamp(36px,4.5vw,56px);
+  line-height:1.1;letter-spacing:-.03em;margin-bottom:20px;
+}
+.hero h1 em{
+  font-style:italic;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-lede{font-size:17px;color:var(--text-2);line-height:1.6;max-width:520px;margin-bottom:28px}
+.hero-actions{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.hero-actions .btn-primary{padding:12px 24px;font-size:14px;border-radius:12px}
+.hero-actions .btn-ghost{padding:12px 24px;font-size:14px;border-radius:12px}
+.hero-meta{font-size:12px;color:var(--text-3);font-family:var(--mono)}
+
+/* Pick stack cards */
+.pick-stack{
+  position:relative;width:100%;height:400px;
+}
+.pick-card{
+  position:absolute;width:280px;padding:20px;
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  box-shadow:0 8px 32px rgba(20,19,26,.08);
+  transition:transform .3s ease;
+}
+.pick-card:nth-child(1){top:0;left:20px;animation:card-float-1 6s ease-in-out infinite}
+.pick-card:nth-child(2){top:40px;left:80px;animation:card-float-2 7s ease-in-out infinite}
+.pick-card:nth-child(3){top:100px;left:30px;animation:card-float-3 5s ease-in-out infinite}
+.pick-card:nth-child(4){top:160px;left:90px;animation:card-float-4 8s ease-in-out infinite}
+.pick-card .pick-rank{
+  font-family:var(--display);font-size:11px;font-weight:700;color:var(--accent);
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;
+}
+.pick-card .pick-title{font-size:14px;font-weight:600;line-height:1.35;margin-bottom:8px;color:var(--ink)}
+.pick-card .pick-meta{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-3)}
+.pick-card .stream-chip{
+  display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.04em;color:#fff;
+}
+
+/* ═══════════════════════════
+   MARQUEE
+   ═══════════════════════════ */
+.marquee{
+  overflow:hidden;padding:28px 0;border-bottom:1px solid var(--border);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);
+}
+.marquee-track{
+  display:flex;gap:48px;animation:scroll 40s linear infinite;width:max-content;
+}
+.marquee-item{
+  display:flex;align-items:center;gap:10px;white-space:nowrap;
+  font-family:var(--display);font-style:italic;font-size:18px;color:var(--text-3);
+  font-weight:400;
+}
+.marquee-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* ═══════════════════════════
+   BROWSER PREVIEW / STAGE
+   ═══════════════════════════ */
+.stage{padding:80px 0}
+.stage .section-label{
+  font-family:var(--mono);font-size:11px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--text-3);margin-bottom:12px;
+}
+.stage .section-title{
+  font-family:var(--display);font-size:clamp(28px,3vw,40px);font-weight:400;
+  letter-spacing:-.02em;margin-bottom:40px;line-height:1.15;
+}
+.browser-frame{
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  overflow:hidden;box-shadow:0 20px 60px rgba(20,19,26,.08);
+}
+.browser-bar{
+  display:flex;align-items:center;gap:8px;padding:12px 16px;
+  background:var(--surface-2);border-bottom:1px solid var(--border);
+}
+.traffic-dot{width:10px;height:10px;border-radius:50%}
+.traffic-dot.r{background:#ff5f57}
+.traffic-dot.y{background:#febc2e}
+.traffic-dot.g{background:#28c840}
+.browser-url{
+  flex:1;margin-left:12px;padding:6px 12px;border-radius:8px;
+  background:var(--bg);font-family:var(--mono);font-size:11px;color:var(--text-3);
+}
+.browser-content{
+  display:grid;grid-template-columns:1fr 1fr;min-height:400px;
+}
+.browser-left{padding:28px;border-right:1px solid var(--border)}
+.browser-left h3{
+  font-family:var(--display);font-size:20px;font-weight:500;margin-bottom:20px;
+  letter-spacing:-.01em;
+}
+.browser-pick-list{display:flex;flex-direction:column;gap:12px}
+.browser-pick-item{
+  display:flex;align-items:flex-start;gap:12px;padding:12px;
+  border:1px solid var(--border);border-radius:12px;
+  transition:all .15s;cursor:pointer;
+}
+.browser-pick-item:hover{border-color:var(--accent);background:var(--accent-tint)}
+.browser-pick-num{
+  width:24px;height:24px;border-radius:8px;
+  background:var(--accent-tint);color:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:11px;font-weight:700;flex-shrink:0;
+}
+.browser-pick-info h4{font-size:13px;font-weight:600;line-height:1.3;margin-bottom:2px}
+.browser-pick-info span{font-size:11px;color:var(--text-3)}
+.browser-right{padding:28px;background:var(--surface-2)}
+.browser-right .featured-label{
+  font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--accent);margin-bottom:12px;
+}
+.browser-right .featured-title{
+  font-family:var(--display);font-size:22px;font-weight:500;line-height:1.25;
+  margin-bottom:12px;letter-spacing:-.01em;
+}
+.browser-right .featured-summary{font-size:14px;color:var(--text-2);line-height:1.55;margin-bottom:16px}
+.browser-right .claude-take{
+  background:linear-gradient(135deg,rgba(91,77,255,.06),rgba(197,74,158,.06));
+  border-left:3px solid var(--accent);border-radius:0 10px 10px 0;
+  padding:14px 16px;
+}
+.claude-take .take-label{
+  font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--accent);margin-bottom:6px;
+}
+.claude-take p{font-size:13px;color:var(--ink-2);line-height:1.5}
+
+/* ═══════════════════════════
+   STAT BAND
+   ═══════════════════════════ */
+.stat-band{
+  padding:48px 0;background:var(--surface);border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+}
+.stat-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:32px;
+  max-width:1200px;margin:0 auto;padding:0 24px;text-align:center;
+}
+.stat-num{
+  font-family:var(--display);font-size:clamp(36px,4vw,52px);font-weight:300;
+  letter-spacing:-.03em;line-height:1;margin-bottom:4px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2),var(--accent-3));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.stat-label{font-size:13px;color:var(--text-3);font-weight:500}
+
+/* ═══════════════════════════
+   SECTION COMMON
+   ═══════════════════════════ */
+.section{padding:80px 0}
+.section-num{
+  font-family:var(--mono);font-size:11px;font-weight:600;color:var(--text-3);
+  text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;
+}
+.section-heading{
+  font-family:var(--display);font-size:clamp(28px,3vw,40px);font-weight:400;
+  letter-spacing:-.02em;margin-bottom:12px;line-height:1.15;
+}
+.section-sub{font-size:16px;color:var(--text-2);max-width:560px;margin-bottom:40px}
+
+/* ═══════════════════════════
+   PROBLEM SECTION (01)
+   ═══════════════════════════ */
+.problem-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:24px;
+}
+.problem-col{border-radius:16px;padding:32px;position:relative;overflow:hidden}
+.problem-col.bad{background:var(--bg-warm);border:1px solid var(--border)}
+.problem-col.good{
+  background:linear-gradient(135deg,var(--accent-deep),#1e1050);color:#fff;
+  border:1px solid rgba(91,77,255,.2);
+}
+.problem-label{
+  font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.08em;margin-bottom:20px;
+}
+.problem-col.bad .problem-label{color:var(--text-3)}
+.problem-col.good .problem-label{color:var(--accent-3)}
+.dupe-stack{display:flex;flex-direction:column;gap:8px}
+.dupe-item{
+  padding:14px 16px;border-radius:10px;font-size:13px;color:var(--text-2);
+  background:var(--surface);border:1px solid var(--border);line-height:1.4;
+}
+.dupe-item .dupe-source{
+  font-family:var(--mono);font-size:10px;color:var(--text-3);
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;display:block;
+}
+.good-card{
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;padding:20px;margin-bottom:16px;
+  box-shadow:0 0 40px rgba(91,77,255,.15);
+}
+.good-card h4{font-family:var(--display);font-size:17px;font-weight:500;margin-bottom:8px;line-height:1.3}
+.good-card p{font-size:13px;color:rgba(255,255,255,.7);line-height:1.5}
+.good-take{
+  background:rgba(91,77,255,.15);border-left:3px solid var(--accent);
+  border-radius:0 10px 10px 0;padding:14px 16px;
+}
+.good-take .take-label{
+  font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--accent-3);margin-bottom:6px;
+}
+.good-take p{font-size:13px;color:rgba(255,255,255,.85);line-height:1.5}
+
+/* ═══════════════════════════
+   FEATURES GRID (02)
+   ═══════════════════════════ */
+.features-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:20px;
+}
+.feature-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  padding:28px 24px;transition:all .2s;position:relative;overflow:hidden;cursor:default;
+}
+.feature-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background:radial-gradient(circle at 50% 0%,rgba(91,77,255,.04),transparent 70%);
+  opacity:0;transition:opacity .2s;
+}
+.feature-card:hover{
+  transform:translateY(-2px);
+  border-color:var(--accent);
+  box-shadow:0 8px 24px rgba(91,77,255,.08);
+}
+.feature-card:hover::before{opacity:1}
+.feature-icon{
+  width:40px;height:40px;border-radius:10px;background:var(--accent-tint);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;margin-bottom:16px;position:relative;z-index:1;
+}
+.feature-card h3{
+  font-size:15px;font-weight:700;margin-bottom:6px;position:relative;z-index:1;
+}
+.feature-card p{font-size:13px;color:var(--text-2);line-height:1.5;position:relative;z-index:1}
+
+/* ═══════════════════════════
+   STREAMS GRID (03)
+   ═══════════════════════════ */
+.streams-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:16px;
+}
+.stream-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:0;overflow:hidden;transition:all .2s;position:relative;cursor:default;
+}
+.stream-card::before{
+  content:'';position:absolute;bottom:-40px;right:-40px;
+  width:80px;height:80px;border-radius:50%;
+  background:var(--stream-col);opacity:0;
+  transition:all .3s;
+}
+.stream-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 24px color-mix(in srgb, var(--stream-col) 20%, transparent);
+}
+.stream-card:hover::before{opacity:.12;width:160px;height:160px;bottom:-60px;right:-60px}
+.stream-bar{height:4px;background:var(--stream-col)}
+.stream-card-body{padding:20px}
+.stream-card h3{font-size:15px;font-weight:700;margin-bottom:4px}
+.stream-card p{font-size:12px;color:var(--text-3);line-height:1.4}
+
+/* ═══════════════════════════
+   HOW IT WORKS (04)
+   ═══════════════════════════ */
+.steps{display:flex;flex-direction:column;gap:48px}
+.step{display:grid;grid-template-columns:120px 1fr;gap:32px;align-items:start}
+.step-num{
+  font-family:var(--display);font-style:italic;font-size:64px;font-weight:300;
+  line-height:1;color:var(--accent);opacity:.5;
+}
+.step h3{font-size:18px;font-weight:700;margin-bottom:6px}
+.step p{font-size:14px;color:var(--text-2);line-height:1.5;margin-bottom:8px}
+.step code{
+  font-family:var(--mono);font-size:11px;color:var(--text-3);
+  background:var(--surface-2);padding:4px 8px;border-radius:6px;
+  display:inline-block;
+}
+
+/* ═══════════════════════════
+   CTA SECTION
+   ═══════════════════════════ */
+.cta-section{
+  position:relative;overflow:hidden;
+  background:linear-gradient(135deg,var(--ink),var(--accent-deep));
+  padding:80px 0;
+}
+.cta-section::before{
+  content:'';position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  background-repeat:repeat;background-size:256px 256px;opacity:.5;pointer-events:none;
+}
+.cta-inner{position:relative;z-index:1;text-align:center;max-width:700px;margin:0 auto}
+.cta-section h2{
+  font-family:var(--display);font-size:clamp(32px,4vw,48px);font-weight:400;
+  color:#fff;letter-spacing:-.03em;line-height:1.1;margin-bottom:12px;
+}
+.cta-section .cta-sub{font-size:16px;color:rgba(255,255,255,.6);margin-bottom:32px}
+.cta-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.cta-actions .btn-cta-primary{
+  padding:14px 28px;border-radius:12px;font-size:15px;font-weight:700;
+  background:#fff;color:var(--ink);transition:all .15s;display:inline-flex;align-items:center;gap:6px;
+}
+.cta-actions .btn-cta-primary:hover{background:var(--accent-tint);color:var(--accent)}
+.cta-actions .btn-cta-ghost{
+  padding:14px 28px;border-radius:12px;font-size:15px;font-weight:600;
+  border:1px solid rgba(255,255,255,.2);color:#fff;transition:all .15s;
+}
+.cta-actions .btn-cta-ghost:hover{border-color:#fff;background:rgba(255,255,255,.05)}
+
+/* ═══════════════════════════
+   FOOTER
+   ═══════════════════════════ */
+.footer{
+  padding:32px 0;border-top:1px solid var(--border);
+}
+.footer-inner{
+  display:flex;align-items:center;justify-content:space-between;
+  max-width:1200px;margin:0 auto;padding:0 24px;
+  font-size:13px;color:var(--text-3);
+}
+.footer-brand{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--ink)}
+.footer-links{display:flex;gap:20px}
+.footer-links a{transition:color .15s}
+.footer-links a:hover{color:var(--ink)}
+
+/* ═══════════════════════════
+   RESPONSIVE
+   ═══════════════════════════ */
+@media(max-width:900px){
+  .hero-inner{grid-template-columns:1fr;text-align:center}
+  .hero-lede{margin-left:auto;margin-right:auto}
+  .hero-actions{justify-content:center}
+  .hero-eyebrow{margin-left:auto;margin-right:auto}
+  .pick-stack{display:none}
+  .browser-content{grid-template-columns:1fr}
+  .browser-right{border-top:1px solid var(--border)}
+  .problem-grid{grid-template-columns:1fr}
+  .features-grid{grid-template-columns:1fr 1fr}
+  .streams-grid{grid-template-columns:1fr 1fr}
+  .stat-grid{grid-template-columns:1fr 1fr}
+  .step{grid-template-columns:80px 1fr}
+  .nav-links{display:none}
+}
+@media(max-width:600px){
+  .features-grid{grid-template-columns:1fr}
+  .streams-grid{grid-template-columns:1fr}
+  .stat-grid{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
-<header class="masthead">
-  <div class="masthead-label">Your Daily Tech Intelligence</div>
-  <h1 class="masthead-title">The TLDR Digest</h1>
-  <div class="masthead-date" id="digest-date">Loading...</div>
-</header>
-<div class="stats-bar" id="stats-bar" style="display:none">
-  <span id="stat-streams"></span>
-  <span class="dot"></span>
-  <span id="stat-stories"></span>
-  <span class="dot"></span>
-  <span id="stat-time"></span>
+
+<!-- ═══════ NAV ═══════ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#" class="nav-brand">
+      <div class="brand-mark">T</div>
+      TLDR Digest
+    </a>
+    <div class="nav-links">
+      <a href="#why">Why</a>
+      <a href="#streams">Streams</a>
+      <a href="#how">How it works</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <div class="nav-cta">
+      <a href="reader.html" class="btn-ghost">Today's brief</a>
+      <a href="reader.html" class="btn-primary">Read it now &rarr;</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════ HERO ═══════ -->
+<section class="hero">
+  <div class="hero-aurora">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+  <div class="hero-inner">
+    <div class="hero-content">
+      <div class="hero-eyebrow">
+        <span class="live-dot"></span>
+        <span id="hero-eyebrow-text">Today's brief &middot; loading&hellip;</span>
+      </div>
+      <h1>The five-minute<br>brief, <em>written &amp;<br>picked</em> by Claude.</h1>
+      <p class="hero-lede">Every morning Claude reads 12 TLDR newsletters, deduplicates the noise, picks the top stories, and adds a sharp, honest take on each.</p>
+      <div class="hero-actions">
+        <a href="reader.html" class="btn-primary">Read today's brief &rarr;</a>
+        <a href="#how" class="btn-ghost">How it works</a>
+      </div>
+      <p class="hero-meta" id="hero-meta">Updated today</p>
+    </div>
+    <div class="pick-stack" id="pick-stack">
+      <div class="pick-card">
+        <div class="pick-rank">Pick #1</div>
+        <div class="pick-title">Loading top picks&hellip;</div>
+        <div class="pick-meta"><span class="stream-chip" style="background:var(--col-ai)">AI</span><span>3 min</span></div>
+      </div>
+      <div class="pick-card">
+        <div class="pick-rank">Pick #2</div>
+        <div class="pick-title">Loading&hellip;</div>
+        <div class="pick-meta"><span class="stream-chip" style="background:var(--col-dev)">Dev</span><span>2 min</span></div>
+      </div>
+      <div class="pick-card">
+        <div class="pick-rank">Pick #3</div>
+        <div class="pick-title">Loading&hellip;</div>
+        <div class="pick-meta"><span class="stream-chip" style="background:var(--col-tldr)">Main</span><span>4 min</span></div>
+      </div>
+      <div class="pick-card">
+        <div class="pick-rank">Pick #4</div>
+        <div class="pick-title">Loading&hellip;</div>
+        <div class="pick-meta"><span class="stream-chip" style="background:var(--col-infosec)">InfoSec</span><span>2 min</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ MARQUEE ═══════ -->
+<div class="marquee">
+  <div class="marquee-track">
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-tldr)"></span>TLDR</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-ai)"></span>TLDR AI</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-dev)"></span>TLDR Dev</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-infosec)"></span>TLDR InfoSec</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-it)"></span>TLDR IT</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-fintech)"></span>TLDR Fintech</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-design)"></span>TLDR Design</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-crypto)"></span>TLDR Crypto</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-founders)"></span>TLDR Founders</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-marketing)"></span>TLDR Marketing</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-devops)"></span>TLDR DevOps</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-data)"></span>TLDR Data</span>
+    <!-- duplicate for seamless scroll -->
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-tldr)"></span>TLDR</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-ai)"></span>TLDR AI</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-dev)"></span>TLDR Dev</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-infosec)"></span>TLDR InfoSec</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-it)"></span>TLDR IT</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-fintech)"></span>TLDR Fintech</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-design)"></span>TLDR Design</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-crypto)"></span>TLDR Crypto</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-founders)"></span>TLDR Founders</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-marketing)"></span>TLDR Marketing</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-devops)"></span>TLDR DevOps</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background:var(--col-data)"></span>TLDR Data</span>
+  </div>
 </div>
-<nav class="tab-bar" id="tab-bar" role="tablist" style="display:none"></nav>
-<main class="content" id="content">
-  <div class="loading"><div class="spinner"></div>Loading your digest...</div>
-</main>
-<footer class="footer" id="footer">Generated by Claude \u00B7 Sources: TLDR Newsletters</footer>
 
+<!-- ═══════ BROWSER PREVIEW ═══════ -->
+<section class="stage">
+  <div class="wrap">
+    <div class="section-label">Preview</div>
+    <h2 class="section-title">Your morning brief,<br>at a glance.</h2>
+    <div class="browser-frame">
+      <div class="browser-bar">
+        <span class="traffic-dot r"></span>
+        <span class="traffic-dot y"></span>
+        <span class="traffic-dot g"></span>
+        <span class="browser-url">tldr-digest.vercel.app/reader</span>
+      </div>
+      <div class="browser-content">
+        <div class="browser-left">
+          <h3>Today's brief</h3>
+          <div class="browser-pick-list" id="browser-pick-list">
+            <div class="browser-pick-item">
+              <div class="browser-pick-num">1</div>
+              <div class="browser-pick-info"><h4>Loading picks&hellip;</h4><span>--</span></div>
+            </div>
+            <div class="browser-pick-item">
+              <div class="browser-pick-num">2</div>
+              <div class="browser-pick-info"><h4>Loading&hellip;</h4><span>--</span></div>
+            </div>
+            <div class="browser-pick-item">
+              <div class="browser-pick-num">3</div>
+              <div class="browser-pick-info"><h4>Loading&hellip;</h4><span>--</span></div>
+            </div>
+            <div class="browser-pick-item">
+              <div class="browser-pick-num">4</div>
+              <div class="browser-pick-info"><h4>Loading&hellip;</h4><span>--</span></div>
+            </div>
+            <div class="browser-pick-item">
+              <div class="browser-pick-num">5</div>
+              <div class="browser-pick-info"><h4>Loading&hellip;</h4><span>--</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="browser-right">
+          <div class="featured-label">&#x2728; Pick #1</div>
+          <h3 class="featured-title" id="featured-title">Loading featured story&hellip;</h3>
+          <p class="featured-summary" id="featured-summary">Fetching today's top pick from the digest&hellip;</p>
+          <div class="claude-take">
+            <div class="take-label">Claude's take</div>
+            <p id="featured-take">Loading Claude's perspective&hellip;</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ STAT BAND ═══════ -->
+<div class="stat-band">
+  <div class="stat-grid">
+    <div>
+      <div class="stat-num" id="stat-newsletters">12</div>
+      <div class="stat-label">newsletters</div>
+    </div>
+    <div>
+      <div class="stat-num" id="stat-stories">--</div>
+      <div class="stat-label">stories / day</div>
+    </div>
+    <div>
+      <div class="stat-num" id="stat-readtime">~5</div>
+      <div class="stat-label">min avg read</div>
+    </div>
+    <div>
+      <div class="stat-num">6:00a</div>
+      <div class="stat-label">published daily</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ PROBLEM (01) ═══════ -->
+<section class="section" id="why">
+  <div class="wrap">
+    <div class="section-num">01 &mdash; The problem</div>
+    <h2 class="section-heading">5 emails, one story.</h2>
+    <p class="section-sub">The same headline lands in multiple newsletters. You skim duplicates, miss context, and waste time. We fix that.</p>
+    <div class="problem-grid">
+      <div class="problem-col bad">
+        <div class="problem-label">Without TLDR Digest</div>
+        <div class="dupe-stack">
+          <div class="dupe-item">
+            <span class="dupe-source">TLDR AI</span>
+            OpenAI announces GPT-5 with reasoning capabilities that surpass previous models
+          </div>
+          <div class="dupe-item">
+            <span class="dupe-source">TLDR</span>
+            OpenAI's GPT-5 launches with breakthrough reasoning &mdash; what you need to know
+          </div>
+          <div class="dupe-item">
+            <span class="dupe-source">TLDR Dev</span>
+            GPT-5 released: new reasoning engine changes the game for developers
+          </div>
+          <div class="dupe-item">
+            <span class="dupe-source">TLDR Founders</span>
+            GPT-5 drops &mdash; here's what it means for your startup
+          </div>
+          <div class="dupe-item" style="opacity:.5">
+            <span class="dupe-source">TLDR Data</span>
+            OpenAI GPT-5: reasoning benchmarks and what data teams should know
+          </div>
+        </div>
+      </div>
+      <div class="problem-col good">
+        <div class="problem-label">With TLDR Digest</div>
+        <div class="good-card">
+          <h4>OpenAI launches GPT-5 with advanced reasoning</h4>
+          <p>The latest model from OpenAI features a new reasoning engine that significantly outperforms GPT-4 on complex tasks. Key upgrades include chain-of-thought transparency and multi-step problem solving.</p>
+        </div>
+        <div class="good-take">
+          <div class="take-label">Claude's take</div>
+          <p>The reasoning jump is real but the moat isn't. Open-source models are 3&ndash;6 months behind on benchmarks. The bigger story is the API pricing: $15/M tokens makes this accessible enough to displace a wave of fine-tuned GPT-4 deployments overnight.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ FEATURES (02) ═══════ -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-num">02 &mdash; Features</div>
+    <h2 class="section-heading">Everything in one place.</h2>
+    <p class="section-sub">A reader built for speed, clarity, and zero noise.</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">&#x1F3AF;</div>
+        <h3>Top picks</h3>
+        <p>Claude ranks the 5 most important stories across all streams. Start with what matters.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#x2318;</div>
+        <h3>&#x2318;K search</h3>
+        <p>Instant full-text search across every story. Find anything by title, topic, or stream.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#x23F1;</div>
+        <h3>Time filter</h3>
+        <p>Only have 2 minutes? Filter by read time and get just the quick hits.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#x2705;</div>
+        <h3>Read state</h3>
+        <p>Stories you've opened get dimmed. Never wonder "did I read this?" again.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#x1F4AC;</div>
+        <h3>Claude's take on every story</h3>
+        <p>Not a summary &mdash; a perspective. Claude adds context, critique, and connections you'd miss.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#x1F4F1;</div>
+        <h3>Responsive &amp; fast</h3>
+        <p>Works beautifully on desktop and mobile. No app install, no sign-up, no paywall.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ STREAMS (03) ═══════ -->
+<section class="section" id="streams">
+  <div class="wrap">
+    <div class="section-num">03 &mdash; Streams</div>
+    <h2 class="section-heading">12 newsletters, one digest.</h2>
+    <p class="section-sub">Every TLDR newsletter, deduplicated and enhanced with Claude's perspective.</p>
+    <div class="streams-grid">
+      <div class="stream-card" style="--stream-col:var(--col-tldr)">
+        <div class="stream-bar"></div>
+        <div class="stream-card-body">
+          <h3>TLDR</h3>
+          <p>The original. Tech, startups, and internet culture.</p>
+        </div>
+      </div>
+      <div class="stream-card" style="--stream-col:var(--col-ai)">
+        <div class="stream-bar"></div>
+        <div class="stream-card-body">
+          <h3>TLDR AI</h3>
+          <p>Machine learning, LLMs, research breakthroughs.</p>
+        </div>
+      </div>
+      <div class="stream-card" style="--stream-col:var(--col-dev)">
+        <div class="stream-bar"></div>
+        <div class="stream-card-body">
+          <h3>TLDR Dev</h3>
+          <p>Developer tools, frameworks, best practices.</p>
+        </div>
+      </div>
+      <div class="stream-card" style="--stream-col:var(--col-infosec)">
+        <div class="stream-bar"></div>
+        <div class="stream-card-body">
+          <h3>TLDR InfoSec</h3>
+          <p>Cybersecurity, vulnerabilities, threat intelligence.</p>
+        </div>
+      </div>
+      <div class="stream-card" style="--stream-col:var(--col-it)">
+        <div class="stream-bar"></div>
+        <div class="stream-card-body">
+          <h3>TLDR IT</h3>
+          <p>Enterprise IT, infrastructure, cloud ops.</p>
+        </div>
+      </div>
+      <div class="stream-card" style="--stream-col:var(--col-fintech)">
+        <div class="stream-bar"></div>
+        <div class="stream-card-body">
+          <h3>TLDR Fintech</h3>
+          <p>Payments, banking tech, financial innovation.</p>
+        </div>
+      </div>
+      <div class="stream-card" style="--stream-col:var(--col-design)">
+        <div class="stream-bar"></div>
+        <div class="stream-card-body">
+          <h3>TLDR Design</h3>
+          <p>UX, product design, creative tools.</p>
+        </div>
+      </div>
+      <div class="stream-card" style="--stream-col:var(--col-crypto)">
+        <div class="stream-bar"></div>
+        <div class="stream-card-body">
+          <h3>TLDR Crypto</h3>
+          <p>Web3, blockchain, DeFi, digital assets.</p>
+        </div>
+      </div>
+      <div class="stream-card" style="--stream-col:var(--col-founders)">
+        <div class="stream-bar"></div>
+        <div class="stream-card-body">
+          <h3>TLDR Founders</h3>
+          <p>Fundraising, growth, startup strategy.</p>
+        </div>
+      </div>
+      <div class="stream-card" style="--stream-col:var(--col-marketing)">
+        <div class="stream-bar"></div>
+        <div class="stream-card-body">
+          <h3>TLDR Marketing</h3>
+          <p>Growth marketing, SEO, brand strategy.</p>
+        </div>
+      </div>
+      <div class="stream-card" style="--stream-col:var(--col-devops)">
+        <div class="stream-bar"></div>
+        <div class="stream-card-body">
+          <h3>TLDR DevOps</h3>
+          <p>CI/CD, containers, platform engineering.</p>
+        </div>
+      </div>
+      <div class="stream-card" style="--stream-col:var(--col-data)">
+        <div class="stream-bar"></div>
+        <div class="stream-card-body">
+          <h3>TLDR Data</h3>
+          <p>Data engineering, analytics, ML pipelines.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ HOW IT WORKS (04) ═══════ -->
+<section class="section" id="how">
+  <div class="wrap">
+    <div class="section-num">04 &mdash; How it works</div>
+    <h2 class="section-heading">From inbox to brief<br>in four steps.</h2>
+    <p class="section-sub">Fully automated. No human editors. Just Claude reading, ranking, and writing.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">i.</div>
+        <div>
+          <h3>Fetch</h3>
+          <p>Every morning at 5:30am, we pull the latest edition of all 12 TLDR newsletters via their RSS feeds and email archives.</p>
+          <code>fetch(rss) &rarr; parse &rarr; normalize</code>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">ii.</div>
+        <div>
+          <h3>Deduplicate</h3>
+          <p>Claude groups stories that cover the same event across multiple newsletters. Five emails about the same launch become one clean entry.</p>
+          <code>stories[] &rarr; embeddings &rarr; cluster &rarr; merge</code>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">iii.</div>
+        <div>
+          <h3>Take</h3>
+          <p>For every story, Claude writes a sharp, honest take &mdash; not a summary, but an opinion with context, critique, and connections.</p>
+          <code>story &rarr; claude.analyze() &rarr; take</code>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">iv.</div>
+        <div>
+          <h3>Publish</h3>
+          <p>The digest lands on the site by 6am. Top 5 picks are ranked, every story is searchable, and Claude's take is always visible.</p>
+          <code>digest &rarr; supabase.upsert() &rarr; live</code>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ FAQ (anchor target) ═══════ -->
+<div id="faq"></div>
+
+<!-- ═══════ CTA ═══════ -->
+<section class="cta-section">
+  <div class="cta-inner wrap">
+    <h2>Stop skimming five inboxes.<br>Read one brief.</h2>
+    <p class="cta-sub" id="cta-sub">Today's digest has stories from 12 streams. Takes about 5 minutes.</p>
+    <div class="cta-actions">
+      <a href="reader.html" class="btn-cta-primary">Read today's brief &rarr;</a>
+      <a href="#how" class="btn-cta-ghost">See how it works</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ FOOTER ═══════ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="brand-mark" style="width:24px;height:24px;font-size:12px;border-radius:7px">T</div>
+      TLDR Digest
+    </div>
+    <div class="footer-links">
+      <a href="#why">Why</a>
+      <a href="#streams">Streams</a>
+      <a href="#how">How it works</a>
+      <a href="reader.html">Read</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════ DATA SCRIPT ═══════ -->
 <script>
-const SUPABASE_URL = 'https://zuxznsgefrjkxokldoah.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1eHpuc2dlZnJqa3hva2xkb2FoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MzA1MjIsImV4cCI6MjA5MzQwNjUyMn0.QU4csmfWGbRmCZUbcZWq142x44T1kR7oh-pwo9eMofE';
+(async function() {
+  const SUPABASE_URL = 'https://zuxznsgefrjkxokldoah.supabase.co';
+  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1eHpuc2dlZnJqa3hva2xkb2FoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MzA1MjIsImV4cCI6MjA5MzQwNjUyMn0.QU4csmfWGbRmCZUbcZWq142x44T1kR7oh-pwo9eMofE';
 
-const STREAM_CFG = {
-  'TLDR':                      {color:'#4A90D9',icon:'\u{1F4F1}',short:'Main'},
-  'TLDR AI':                   {color:'#8B5CF6',icon:'\u{1F916}',short:'AI'},
-  'TLDR Dev':                  {color:'#10B981',icon:'\u{1F4BB}',short:'Dev'},
-  'TLDR Information Security': {color:'#EF4444',icon:'\u{1F512}',short:'InfoSec'},
-  'TLDR IT':                   {color:'#6366F1',icon:'\u{1F3E2}',short:'IT'},
-  'TLDR Fintech':              {color:'#06B6D4',icon:'\u{1F4B0}',short:'Fintech'},
-  'TLDR Design':               {color:'#F59E0B',icon:'\u{1F3A8}',short:'Design'},
-  'TLDR Crypto':               {color:'#F97316',icon:'\u{20BF}',short:'Crypto'},
-  'TLDR Founders':             {color:'#EC4899',icon:'\u{1F680}',short:'Founders'},
-  'TLDR Marketing':            {color:'#14B8A6',icon:'\u{1F4CA}',short:'Marketing'},
-  'TLDR DevOps':               {color:'#7C3AED',icon:'\u{2699}\u{FE0F}',short:'DevOps'},
-  'TLDR Startups':             {color:'#A855F7',icon:'\u{1F331}',short:'Startups'},
-  'TLDR Data':                 {color:'#059669',icon:'\u{1F4C8}',short:'Data'},
-};
-const STREAM_ORDER = Object.keys(STREAM_CFG);
+  const STREAMS = {
+    'TLDR':                      { id: 'tldr',     short: 'Main',     cssVar: '--col-tldr' },
+    'TLDR AI':                   { id: 'ai',       short: 'AI',       cssVar: '--col-ai' },
+    'TLDR Dev':                  { id: 'dev',      short: 'Dev',      cssVar: '--col-dev' },
+    'TLDR Information Security': { id: 'infosec',  short: 'InfoSec',  cssVar: '--col-infosec' },
+    'TLDR IT':                   { id: 'it',       short: 'IT',       cssVar: '--col-it' },
+    'TLDR Fintech':              { id: 'fintech',  short: 'Fintech',  cssVar: '--col-fintech' },
+    'TLDR Design':               { id: 'design',   short: 'Design',   cssVar: '--col-design' },
+    'TLDR Crypto':               { id: 'crypto',   short: 'Crypto',   cssVar: '--col-crypto' },
+    'TLDR Founders':             { id: 'founders', short: 'Founders', cssVar: '--col-founders' },
+    'TLDR Marketing':            { id: 'marketing',short: 'Marketing',cssVar: '--col-marketing' },
+    'TLDR DevOps':               { id: 'devops',   short: 'DevOps',   cssVar: '--col-devops' },
+    'TLDR Data':                 { id: 'data',     short: 'Data',     cssVar: '--col-data' },
+  };
 
-function fmtDate(d){
-  return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-}
-function escHtml(s){
-  if(!s) return '';
-  const d=document.createElement('div');d.textContent=s;return d.innerHTML;
-}
-function textToHtml(text){
-  if(!text) return '';
-  return text.split(/\n\n+/).map(p => '<p>' + escHtml(p.trim()) + '</p>').join('');
-}
-function toggleCard(card){
-  const wasExpanded = card.classList.contains('expanded');
-  card.classList.toggle('expanded');
-  if(!wasExpanded && window.innerWidth <= 768){
-    setTimeout(() => card.scrollIntoView({behavior:'smooth',block:'start',inline:'nearest'}), 50);
+  function getStreamInfo(name) {
+    return STREAMS[name] || { id: 'unknown', short: name, cssVar: '--col-tldr' };
   }
-}
 
-async function loadDigest(){
-  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const {data:latest} = await sb.from('digest_entries').select('digest_date').order('digest_date',{ascending:false}).limit(1).single();
-  if(!latest){
-    document.getElementById('content').innerHTML = '<div class="empty-state"><p class="empty-icon">\u{1F4F0}</p><p class="empty-title">No digest yet</p><p class="empty-body">Your first TLDR digest will appear here once the daily pipeline runs. Check back tomorrow morning.</p></div>';
-    document.getElementById('digest-date').textContent = fmtDate(new Date().toISOString().split('T')[0]);
-    return;
+  function escapeHTML(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
   }
-  const digestDate = latest.digest_date;
-  document.getElementById('digest-date').textContent = fmtDate(digestDate);
-  const {data:entries} = await sb.from('digest_entries').select('*').eq('digest_date', digestDate).order('stream_name');
-  if(!entries||!entries.length){
-    document.getElementById('content').innerHTML = '<div class="empty-state"><p class="empty-icon">\u{1F4F0}</p><p class="empty-title">No stories found</p><p class="empty-body">Digest entries are empty for this date.</p></div>';
-    return;
-  }
-  const streams = new Map();
-  let totalStories = 0;
-  entries.forEach(e => {
-    if(!streams.has(e.stream_name)) streams.set(e.stream_name, []);
-    streams.get(e.stream_name).push(e);
-    totalStories += (e.stories||[]).length;
-  });
-  const sorted = Array.from(streams.entries()).sort(([a],[b]) => {
-    const ai = STREAM_ORDER.indexOf(a), bi = STREAM_ORDER.indexOf(b);
-    return (ai===-1?99:ai) - (bi===-1?99:bi);
-  });
-  document.getElementById('stats-bar').style.display = 'flex';
-  document.getElementById('stat-streams').textContent = sorted.length + ' newsletters';
-  document.getElementById('stat-stories').textContent = totalStories + ' stories';
-  document.getElementById('stat-time').textContent = '~' + Math.max(5, Math.round(totalStories*0.2)) + ' min read';
-  const tabBar = document.getElementById('tab-bar');
-  tabBar.style.display = 'flex';
-  tabBar.innerHTML = '';
-  const content = document.getElementById('content');
-  content.innerHTML = '';
 
-  sorted.forEach(([name, sectionEntries], idx) => {
-    const cfg = STREAM_CFG[name] || {color:'#6B7280',icon:'\u{1F4F0}',short:name.replace('TLDR ','')};
-    const streamId = name.toLowerCase().replace(/\s+/g,'-');
-    const btn = document.createElement('button');
-    btn.className = 'tab-btn' + (idx===0?' active':'');
-    btn.setAttribute('data-stream', streamId);
-    btn.style.setProperty('--stream-color', cfg.color);
-    btn.textContent = cfg.icon + ' ' + cfg.short;
-    btn.addEventListener('click', () => switchTab(streamId, btn));
-    tabBar.appendChild(btn);
-    const panel = document.createElement('div');
-    panel.id = streamId;
-    panel.className = 'stream-panel' + (idx===0?' active':'');
-    sectionEntries.forEach(entry => {
-      const sec = document.createElement('div');
-      sec.innerHTML = '<h3 class="section-header">' + escHtml(entry.section_name) + '</h3>';
-      (entry.stories||[]).forEach(story => {
-        const card = document.createElement('article');
-        card.className = 'story-card';
-        card.addEventListener('click', function(e){
-          if(e.target.closest('a')) return;
-          toggleCard(this);
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/digest_entries?digest_date=eq.${today}&select=*`,
+      { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } }
+    );
+    const rows = await res.json();
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+      document.getElementById('hero-eyebrow-text').textContent = "Today's brief · no stories yet · check back soon";
+      return;
+    }
+
+    // Flatten all stories
+    const allStories = [];
+    const streamSet = new Set();
+    rows.forEach(row => {
+      streamSet.add(row.stream_name);
+      if (Array.isArray(row.stories)) {
+        row.stories.forEach(s => {
+          allStories.push({ ...s, stream_name: row.stream_name, section_name: row.section_name });
         });
-        const preview = story.summary || '';
-        const detail = story.claude_take || story.summary || '';
-        const hasDetail = detail.length > 0;
-        const linkHtml = story.link ? '<a href="'+escHtml(story.link)+'" target="_blank" rel="noopener" class="read-more">Read source \u{2192}</a>' : '';
-        card.innerHTML =
-          '<div class="story-header">' +
-            '<div class="story-header-left">' +
-              '<div class="story-meta"><span class="time-badge">'+escHtml(story.read_time||'')+'</span></div>' +
-              '<h4 class="story-title">'+escHtml(story.title)+'</h4>' +
-              '<p class="story-preview">'+escHtml(preview)+'</p>' +
-            '</div>' +
-            '<div class="expand-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
-          '</div>' +
-          '<div class="story-detail">' +
-            '<div class="story-detail-inner">' +
-              (hasDetail ? '<div class="story-detail-text">'+textToHtml(detail)+'</div>' : '<p class="no-detail">Detailed analysis will be available once the daily digest runs.</p>') +
-              linkHtml +
+      }
+    });
+
+    const totalStories = allStories.length;
+    const distinctStreams = streamSet.size;
+
+    // Avg read time
+    const readTimes = allStories.map(s => parseInt(s.read_time) || 3);
+    const avgRead = Math.round(readTimes.reduce((a, b) => a + b, 0) / (readTimes.length || 1));
+    const totalRead = Math.round(readTimes.reduce((a, b) => a + b, 0));
+
+    // Top picks (by pick_rank)
+    const picks = allStories
+      .filter(s => s.pick_rank != null)
+      .sort((a, b) => a.pick_rank - b.pick_rank);
+
+    // -- Hero eyebrow --
+    document.getElementById('hero-eyebrow-text').textContent =
+      "Today’s brief · " + totalStories + " stories · ~" + Math.min(totalRead, 30) + " min read";
+
+    // -- Hero meta --
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    document.getElementById('hero-meta').textContent =
+      'Updated ' + today + ' · ' + timeStr;
+
+    // -- Pick stack (top 4) --
+    const stackEl = document.getElementById('pick-stack');
+    if (picks.length > 0) {
+      const stackCards = stackEl.querySelectorAll('.pick-card');
+      for (let i = 0; i < Math.min(4, picks.length); i++) {
+        const p = picks[i];
+        const info = getStreamInfo(p.stream_name);
+        const card = stackCards[i];
+        if (!card) continue;
+        card.querySelector('.pick-rank').textContent = 'Pick #' + p.pick_rank;
+        card.querySelector('.pick-title').textContent = p.title;
+        const chip = card.querySelector('.stream-chip');
+        chip.textContent = info.short;
+        chip.style.background = 'var(' + info.cssVar + ')';
+        card.querySelector('.pick-meta span:last-child').textContent = (p.read_time || '3') + ' min';
+      }
+    }
+
+    // -- Browser preview: pick list (top 5) --
+    const listEl = document.getElementById('browser-pick-list');
+    if (picks.length > 0) {
+      let listHTML = '';
+      for (let i = 0; i < Math.min(5, picks.length); i++) {
+        const p = picks[i];
+        const info = getStreamInfo(p.stream_name);
+        listHTML +=
+          '<div class="browser-pick-item">' +
+            '<div class="browser-pick-num">' + p.pick_rank + '</div>' +
+            '<div class="browser-pick-info">' +
+              '<h4>' + escapeHTML(p.title) + '</h4>' +
+              '<span>' + info.short + ' · ' + (p.read_time || '3') + ' min</span>' +
             '</div>' +
           '</div>';
-        sec.appendChild(card);
-      });
-      panel.appendChild(sec);
-    });
-    content.appendChild(panel);
-  });
-  document.getElementById('footer').innerHTML = 'Generated by Claude \u{00B7} Sources: TLDR Newsletters<br>' + fmtDate(digestDate);
-}
+      }
+      listEl.innerHTML = listHTML;
+    }
 
-function switchTab(streamId, btn){
-  document.querySelectorAll('.tab-btn').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.stream-panel').forEach(p=>p.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById(streamId).classList.add('active');
-  if(window.innerWidth<=768) document.querySelector('.content').scrollIntoView({behavior:'smooth',block:'start'});
-  btn.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
-}
-let touchX=0;
-document.addEventListener('touchstart',e=>{touchX=e.changedTouches[0].screenX},{passive:true});
-document.addEventListener('touchend',e=>{
-  const diff=touchX-e.changedTouches[0].screenX;
-  if(Math.abs(diff)>80){
-    const tabs=Array.from(document.querySelectorAll('.tab-btn'));
-    const active=document.querySelector('.tab-btn.active');
-    const idx=tabs.indexOf(active);
-    const next=diff>0?Math.min(idx+1,tabs.length-1):Math.max(idx-1,0);
-    if(next!==idx)tabs[next].click();
+    // -- Browser preview: featured card (pick #1) --
+    if (picks.length > 0) {
+      const top = picks[0];
+      document.getElementById('featured-title').textContent = top.title;
+      document.getElementById('featured-summary').textContent = top.summary || 'No summary available.';
+      document.getElementById('featured-take').textContent = top.claude_take || 'No take available yet.';
+    }
+
+    // -- Stat band --
+    document.getElementById('stat-newsletters').textContent = distinctStreams;
+    document.getElementById('stat-stories').textContent = totalStories;
+    document.getElementById('stat-readtime').textContent = '~' + avgRead;
+
+    // -- CTA sub --
+    document.getElementById('cta-sub').textContent =
+      "Today’s digest has " + totalStories + " stories from " + distinctStreams + " streams. Takes about " + Math.min(totalRead, 30) + " minutes.";
+
+  } catch (err) {
+    console.error('Failed to fetch digest data:', err);
+    document.getElementById('hero-eyebrow-text').textContent = "Today’s brief · loading failed · try refreshing";
   }
-},{passive:true});
-loadDigest();
+})();
 </script>
 </body>
 </html>

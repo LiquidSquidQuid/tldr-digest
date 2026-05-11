@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TLDR Digest — Reader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+@font-face {
+  font-family: 'Geist';
+  src: url('https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-sans/Geist-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist';
+  src: url('https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-sans/Geist-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist';
+  src: url('https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-sans/Geist-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist';
+  src: url('https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-sans/Geist-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --bg: #fafaf7; --bg-tint: #f5f2ec; --surface: #ffffff; --surface-2: #f8f6f2;
+  --text: #14131a; --text-2: #54525e; --text-3: #8a8794;
+  --border: #ebe8e2; --border-strong: #d8d4cc;
+  --accent: #5b4dff; --accent-2: #7c3aed; --accent-tint: #f0edff; --accent-soft: #ece8ff;
+  --shadow-sm: 0 1px 2px rgba(20,19,26,0.04);
+  --shadow: 0 4px 16px -4px rgba(20,19,26,0.08), 0 1px 2px rgba(20,19,26,0.04);
+  --shadow-lg: 0 12px 40px -12px rgba(20,19,26,0.16), 0 2px 8px rgba(20,19,26,0.04);
+  --radius: 14px; --radius-sm: 8px;
+  --col-ai: #7c3aed; --col-dev: #059669; --col-infosec: #dc2626; --col-tldr: #2563eb;
+  --col-design: #d97706; --col-fintech: #0891b2; --col-founders: #db2777;
+  --col-devops: #6d28d9; --col-data: #047857; --col-it: #6366f1;
+  --col-crypto: #f97316; --col-marketing: #14b8a6;
+  --sans: 'Geist', system-ui, sans-serif;
+  --mono: 'Geist Mono', ui-monospace, monospace;
+  --display: 'Fraunces', Georgia, serif;
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* === NAV === */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: rgba(250, 250, 247, 0.85);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.nav-back {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-3);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.15s;
+}
+.nav-back:hover { color: var(--text); }
+.brand-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 1.1rem;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.nav-search {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+}
+.nav-search input {
+  width: 100%;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0 12px 0 36px;
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.nav-search input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-tint);
+}
+.nav-search input::placeholder { color: var(--text-3); }
+.nav-search-icon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-3);
+  pointer-events: none;
+}
+.nav-search-kbd {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--text-3);
+  background: var(--bg-tint);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  pointer-events: none;
+}
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  font-size: 0.9rem;
+}
+.nav-btn:hover { border-color: var(--border-strong); color: var(--text); }
+.nav-subscribe {
+  height: 36px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.nav-subscribe:hover { opacity: 0.9; }
+
+/* === HERO === */
+.hero {
+  padding: 48px 24px 40px;
+  text-align: center;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 16px;
+}
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: pulse-dot 2s ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(34,197,94,0.4);
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
+}
+.hero h1 {
+  font-family: var(--display);
+  font-size: 2.4rem;
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 24px;
+}
+.hero-stats {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+}
+.hero-stat {
+  text-align: center;
+}
+.hero-stat-value {
+  font-family: var(--display);
+  font-size: 1.6rem;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.2;
+}
+.hero-stat-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* === TOP PICKS === */
+.top-picks {
+  max-width: 900px;
+  margin: 0 auto 32px;
+  padding: 0 24px;
+}
+.top-picks-card {
+  background: linear-gradient(135deg, var(--accent-tint) 0%, var(--surface) 60%, #f8f0ff 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+.top-picks-label {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.top-picks-label svg { flex-shrink: 0; }
+.top-picks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.pick-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-decoration: none;
+  color: inherit;
+}
+.pick-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow);
+  transform: translateY(-1px);
+}
+.pick-card-rank {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.pick-card-title {
+  font-family: var(--display);
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--text);
+}
+.pick-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.7rem;
+  color: var(--text-3);
+}
+.pick-card-stream {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.pick-card-stream .stream-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* === MAIN LAYOUT === */
+.main-layout {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px 64px;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+/* === SIDEBAR === */
+.sidebar {
+  position: sticky;
+  top: 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sidebar-title {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+  padding: 0 8px 8px;
+  margin-bottom: 4px;
+}
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s;
+  user-select: none;
+}
+.sidebar-item:hover { background: var(--bg-tint); }
+.sidebar-item.active { background: var(--accent-tint); }
+.sidebar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.sidebar-info {
+  flex: 1;
+  min-width: 0;
+}
+.sidebar-name {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-count {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--text-3);
+}
+.sidebar-bar {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border);
+  margin-top: 3px;
+  overflow: hidden;
+}
+.sidebar-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  width: var(--w, 0%);
+  transition: width 0.4s ease;
+}
+
+/* === FILTERS === */
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.filter-chip {
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--text-2);
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.filter-chip:hover { border-color: var(--border-strong); color: var(--text); }
+.filter-chip.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* === FEED === */
+.feed { display: flex; flex-direction: column; }
+.stream-group { margin-bottom: 32px; }
+.stream-group-header {
+  position: sticky;
+  top: 56px;
+  z-index: 50;
+  background: rgba(250, 250, 247, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.stream-group-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.stream-group-name {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-2);
+}
+.stream-group-count {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--text-3);
+  margin-left: auto;
+}
+.section-label {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  padding: 16px 0 8px;
+}
+
+/* === STORY CARD === */
+.story-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 10px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.story-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow);
+}
+.story-card.read-state {
+  opacity: 0.55;
+}
+.story-card.read-state:hover {
+  opacity: 0.8;
+}
+.story-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.story-time {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+.read-toggle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  padding: 0;
+}
+.read-toggle:hover { border-color: var(--accent); }
+.read-toggle.checked {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+.read-toggle.checked svg { opacity: 1; }
+.read-toggle svg { opacity: 0; transition: opacity 0.15s; }
+.story-title {
+  font-family: var(--display);
+  font-size: 1.15rem;
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.story-summary {
+  font-size: 0.88rem;
+  color: var(--text-2);
+  line-height: 1.65;
+  margin-bottom: 12px;
+}
+.story-take {
+  border-left: 3px solid var(--stream-color, var(--accent));
+  background: var(--surface-2);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  display: flex;
+  gap: 10px;
+}
+.take-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: var(--sans);
+  font-size: 0.68rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.take-text {
+  font-size: 0.84rem;
+  color: var(--text-2);
+  line-height: 1.6;
+  font-style: italic;
+}
+.story-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.story-link {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: opacity 0.15s;
+}
+.story-link:hover { opacity: 0.7; }
+.story-action-btn {
+  border: none;
+  background: none;
+  color: var(--text-3);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.story-action-btn:hover { color: var(--text-2); background: var(--bg-tint); }
+
+/* === LOADING === */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 16px;
+}
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text {
+  font-size: 0.88rem;
+  color: var(--text-3);
+}
+
+/* === EMPTY === */
+.empty-state {
+  text-align: center;
+  padding: 80px 24px;
+}
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+.empty-title {
+  font-family: var(--display);
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+}
+.empty-body {
+  font-size: 0.88rem;
+  color: var(--text-2);
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 800px) {
+  .main-layout {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 0 16px 48px;
+  }
+  .sidebar {
+    position: relative;
+    top: auto;
+    flex-direction: row;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 6px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .sidebar::-webkit-scrollbar { display: none; }
+  .sidebar-title { display: none; }
+  .sidebar-item {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--surface);
+  }
+  .sidebar-item.active {
+    background: var(--accent-tint);
+    border-color: var(--accent);
+  }
+  .sidebar-bar { display: none; }
+  .sidebar-count { display: none; }
+  .hero { padding: 32px 16px 28px; }
+  .hero h1 { font-size: 1.8rem; }
+  .hero-stats { gap: 20px; }
+  .hero-stat-value { font-size: 1.3rem; }
+  .top-picks { padding: 0 16px; }
+  .top-picks-grid { grid-template-columns: 1fr; }
+  .nav { padding: 0 16px; }
+  .nav-subscribe { display: none; }
+  .stream-group-header { top: 56px; }
+}
+@media (max-width: 480px) {
+  .hero h1 { font-size: 1.5rem; }
+  .hero-stats { flex-wrap: wrap; gap: 16px; }
+  .story-card { padding: 16px; border-radius: 12px; }
+  .story-title { font-size: 1.05rem; }
+  .nav-search { max-width: none; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+const SUPABASE_URL = 'https://zuxznsgefrjkxokldoah.supabase.co';
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1eHpuc2dlZnJqa3hva2xkb2FoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MzA1MjIsImV4cCI6MjA5MzQwNjUyMn0.QU4csmfWGbRmCZUbcZWq142x44T1kR7oh-pwo9eMofE';
+
+const STREAMS = {
+  'TLDR':                      { id: 'tldr',     short: 'Main',     cssVar: '--col-tldr' },
+  'TLDR AI':                   { id: 'ai',       short: 'AI',       cssVar: '--col-ai' },
+  'TLDR Dev':                  { id: 'dev',      short: 'Dev',      cssVar: '--col-dev' },
+  'TLDR Information Security': { id: 'infosec',  short: 'InfoSec',  cssVar: '--col-infosec' },
+  'TLDR IT':                   { id: 'it',       short: 'IT',       cssVar: '--col-it' },
+  'TLDR Fintech':              { id: 'fintech',  short: 'Fintech',  cssVar: '--col-fintech' },
+  'TLDR Design':               { id: 'design',   short: 'Design',   cssVar: '--col-design' },
+  'TLDR Crypto':               { id: 'crypto',   short: 'Crypto',   cssVar: '--col-crypto' },
+  'TLDR Founders':             { id: 'founders', short: 'Founders', cssVar: '--col-founders' },
+  'TLDR Marketing':            { id: 'marketing',short: 'Marketing',cssVar: '--col-marketing' },
+  'TLDR DevOps':               { id: 'devops',   short: 'DevOps',   cssVar: '--col-devops' },
+  'TLDR Data':                 { id: 'data',     short: 'Data',     cssVar: '--col-data' },
+};
+
+const STREAM_ORDER = Object.keys(STREAMS);
+
+function sc(id) { return `var(--col-${id})`; }
+
+function parseReadTime(rt) {
+  if (!rt) return 3;
+  const n = parseInt(rt, 10);
+  return isNaN(n) ? 3 : n;
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+const READ_KEY = 'tldr-digest:read';
+
+function getReadSet() {
+  try {
+    const raw = localStorage.getItem(READ_KEY);
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch { return new Set(); }
+}
+
+function saveReadSet(s) {
+  try { localStorage.setItem(READ_KEY, JSON.stringify([...s])); } catch {}
+}
+
+async function fetchDigest() {
+  // First try today
+  const today = new Date().toISOString().split('T')[0];
+  let res = await fetch(
+    `${SUPABASE_URL}/rest/v1/digest_entries?digest_date=eq.${today}&select=*`,
+    { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } }
+  );
+  let rows = await res.json();
+
+  // If no data for today, get the latest date
+  if (!rows || rows.length === 0) {
+    const latestRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/digest_entries?select=digest_date&order=digest_date.desc&limit=1`,
+      { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } }
+    );
+    const latestRows = await latestRes.json();
+    if (!latestRows || latestRows.length === 0) return null;
+    const latestDate = latestRows[0].digest_date;
+
+    res = await fetch(
+      `${SUPABASE_URL}/rest/v1/digest_entries?digest_date=eq.${latestDate}&select=*`,
+      { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } }
+    );
+    rows = await res.json();
+  }
+
+  if (!rows || rows.length === 0) return null;
+
+  const digestDate = rows[0].digest_date;
+  const dayLabel = formatDate(digestDate);
+
+  const streamsMap = {};
+  const storiesMap = {};
+  const allStories = [];
+  const storyById = {};
+  const topPicks = [];
+  let totalStories = 0;
+  let totalReadMin = 0;
+
+  // Sort rows by stream order
+  rows.sort((a, b) => {
+    const ai = STREAM_ORDER.indexOf(a.stream_name);
+    const bi = STREAM_ORDER.indexOf(b.stream_name);
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+  });
+
+  rows.forEach(row => {
+    const cfg = STREAMS[row.stream_name];
+    if (!cfg) return;
+    const streamId = cfg.id;
+
+    if (!streamsMap[streamId]) {
+      streamsMap[streamId] = {
+        id: streamId,
+        name: row.stream_name,
+        short: cfg.short,
+        color: sc(streamId),
+      };
+      storiesMap[streamId] = [];
+    }
+
+    (row.stories || []).forEach((story, index) => {
+      const readTime = parseReadTime(story.read_time);
+      const id = `s-${streamId}-${totalStories + index}`;
+      const storyObj = {
+        id,
+        section: row.section_name,
+        readTime,
+        title: story.title || '',
+        summary: story.summary || '',
+        take: story.claude_take || '',
+        url: story.link || '',
+        streamId,
+        pickRank: story.pick_rank || null,
+      };
+      storiesMap[streamId].push(storyObj);
+      allStories.push(storyObj);
+      storyById[id] = storyObj;
+      totalReadMin += readTime;
+
+      if (story.pick_rank) {
+        topPicks.push({ id, streamId, readTime, pickRank: story.pick_rank });
+      }
+    });
+
+    totalStories += (row.stories || []).length;
+  });
+
+  topPicks.sort((a, b) => a.pickRank - b.pickRank);
+
+  const streams = Object.values(streamsMap);
+
+  return {
+    date: digestDate,
+    dayLabel,
+    streams,
+    stories: storiesMap,
+    topPicks: topPicks.slice(0, 5),
+    totalStories,
+    totalReadMin,
+    streamById: streamsMap,
+    allStories,
+    storyById,
+  };
+}
+
+
+/* ===================== COMPONENTS ===================== */
+
+function Nav({ totalStories, streamCount, searchQuery, onSearchChange, searchRef }) {
+  const placeholder = `Search ${totalStories} stories across ${streamCount} streams…`;
+  return (
+    <nav className="nav">
+      <div className="nav-left">
+        <a href="index.html" className="nav-back">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          Back
+        </a>
+        <div className="brand-mark">T</div>
+      </div>
+      <div className="nav-search">
+        <svg className="nav-search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M10.5 10.5L14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+        <input
+          ref={searchRef}
+          type="text"
+          placeholder={placeholder}
+          value={searchQuery}
+          onChange={e => onSearchChange(e.target.value)}
+        />
+        <span className="nav-search-kbd">⌘K</span>
+      </div>
+      <div className="nav-right">
+        <button className="nav-btn" title="Theme">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.5"/>
+            <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+        </button>
+        <button className="nav-btn" title="Notifications">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M4 6a4 4 0 018 0c0 2 1 3.5 1.5 4.5H2.5C3 10.5 4 8 4 6z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M6.5 13a1.5 1.5 0 003 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+        </button>
+        <button className="nav-subscribe">Subscribe</button>
+      </div>
+    </nav>
+  );
+}
+
+function Hero({ dayLabel, totalStories, totalReadMin, streamCount }) {
+  return (
+    <div className="hero">
+      <div className="hero-eyebrow">
+        <span className="live-dot"></span>
+        <span>Live — {dayLabel}</span>
+      </div>
+      <h1>Your morning brief, in five minutes.</h1>
+      <div className="hero-stats">
+        <div className="hero-stat">
+          <div className="hero-stat-value">{totalStories}</div>
+          <div className="hero-stat-label">Stories</div>
+        </div>
+        <div className="hero-stat">
+          <div className="hero-stat-value">{totalReadMin}m</div>
+          <div className="hero-stat-label">Read time</div>
+        </div>
+        <div className="hero-stat">
+          <div className="hero-stat-value">{streamCount}</div>
+          <div className="hero-stat-label">Streams</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TopPicks({ topPicks, storyById, streamById, onPickClick }) {
+  if (!topPicks || topPicks.length === 0) return null;
+  return (
+    <div className="top-picks">
+      <div className="top-picks-card">
+        <div className="top-picks-label">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M7 1l1.76 3.57L13 5.24l-3 2.92.71 4.13L7 10.27 3.29 12.3 4 8.16 1 5.24l4.24-.67L7 1z" fill="currentColor"/>
+          </svg>
+          Today's Brief
+        </div>
+        <div className="top-picks-grid">
+          {topPicks.map((pick, i) => {
+            const story = storyById[pick.id];
+            const stream = streamById[pick.streamId];
+            if (!story || !stream) return null;
+            return (
+              <a
+                key={pick.id}
+                className="pick-card"
+                href={story.url || '#'}
+                target={story.url ? '_blank' : undefined}
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  if (!story.url) e.preventDefault();
+                  onPickClick(pick.id);
+                }}
+              >
+                <div className="pick-card-rank">#{i + 1} pick</div>
+                <div className="pick-card-title">{story.title}</div>
+                <div className="pick-card-meta">
+                  <span className="pick-card-stream">
+                    <span className="stream-dot" style={{ background: sc(pick.streamId) }}></span>
+                    {stream.short}
+                  </span>
+                  <span>{story.readTime}m read</span>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Sidebar({ streams, stories, activeStream, onStreamClick, readSet }) {
+  const maxCount = useMemo(() => {
+    let max = 0;
+    streams.forEach(s => {
+      const count = (stories[s.id] || []).length;
+      if (count > max) max = count;
+    });
+    return max;
+  }, [streams, stories]);
+
+  return (
+    <aside className="sidebar">
+      <div className="sidebar-title">Streams</div>
+      {streams.map(s => {
+        const storyList = stories[s.id] || [];
+        const count = storyList.length;
+        const readCount = storyList.filter(st => readSet.has(st.id)).length;
+        const pct = maxCount > 0 ? (count / maxCount) * 100 : 0;
+        const isActive = activeStream === s.id;
+        return (
+          <div
+            key={s.id}
+            className={`sidebar-item${isActive ? ' active' : ''}`}
+            onClick={() => onStreamClick(s.id)}
+          >
+            <span className="sidebar-dot" style={{ background: sc(s.id) }}></span>
+            <div className="sidebar-info">
+              <div className="sidebar-name">{s.short}</div>
+              <div className="sidebar-count">{readCount}/{count} read</div>
+              <div className="sidebar-bar">
+                <div
+                  className="sidebar-bar-fill"
+                  style={{ '--w': `${pct}%`, background: sc(s.id) }}
+                ></div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </aside>
+  );
+}
+
+function Filters({ timeFilter, onTimeFilter }) {
+  const filters = [
+    { value: 'all', label: 'All' },
+    { value: '2', label: '≤2m' },
+    { value: '3', label: '≤3m' },
+    { value: '5', label: '≤5m' },
+  ];
+  return (
+    <div className="filters">
+      {filters.map(f => (
+        <button
+          key={f.value}
+          className={`filter-chip${timeFilter === f.value ? ' active' : ''}`}
+          onClick={() => onTimeFilter(f.value)}
+        >
+          {f.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function StoryCard({ story, streamId, isRead, onToggleRead }) {
+  return (
+    <article
+      className={`story-card${isRead ? ' read-state' : ''}`}
+      style={{ '--stream-color': sc(streamId) }}
+    >
+      <div className="story-top">
+        <span className="story-time">{story.readTime}m read</span>
+        <button
+          className={`read-toggle${isRead ? ' checked' : ''}`}
+          onClick={(e) => { e.stopPropagation(); onToggleRead(story.id); }}
+          title={isRead ? 'Mark unread' : 'Mark read'}
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      <h3 className="story-title">{story.title}</h3>
+      {story.summary && <p className="story-summary">{story.summary}</p>}
+      {story.take && (
+        <div className="story-take">
+          <div className="take-avatar">C</div>
+          <div className="take-text">{story.take}</div>
+        </div>
+      )}
+      <div className="story-footer">
+        {story.url && (
+          <a className="story-link" href={story.url} target="_blank" rel="noopener noreferrer">
+            Read source
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M3.5 8.5L8.5 3.5M8.5 3.5H4.5M8.5 3.5v4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </a>
+        )}
+        <button className="story-action-btn" title="Save">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M4 2h8a1 1 0 011 1v11l-5-3-5 3V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <button className="story-action-btn" title="Share">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="12" cy="4" r="2" stroke="currentColor" strokeWidth="1.3"/>
+            <circle cx="4" cy="8" r="2" stroke="currentColor" strokeWidth="1.3"/>
+            <circle cx="12" cy="12" r="2" stroke="currentColor" strokeWidth="1.3"/>
+            <path d="M5.8 7.1l4.4-2.2M5.8 8.9l4.4 2.2" stroke="currentColor" strokeWidth="1.3"/>
+          </svg>
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function Feed({ streams, stories, readSet, onToggleRead, activeStream, timeFilter, searchQuery }) {
+  const filteredStreams = useMemo(() => {
+    if (activeStream) return streams.filter(s => s.id === activeStream);
+    return streams;
+  }, [streams, activeStream]);
+
+  const getFilteredStories = useCallback((streamId) => {
+    let list = stories[streamId] || [];
+    if (timeFilter !== 'all') {
+      const max = parseInt(timeFilter, 10);
+      list = list.filter(s => s.readTime <= max);
+    }
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(s =>
+        s.title.toLowerCase().includes(q) ||
+        s.summary.toLowerCase().includes(q) ||
+        s.take.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [stories, timeFilter, searchQuery]);
+
+  // Group stories by section within each stream
+  const groupBySection = useCallback((storyList) => {
+    const sections = {};
+    const order = [];
+    storyList.forEach(s => {
+      if (!sections[s.section]) {
+        sections[s.section] = [];
+        order.push(s.section);
+      }
+      sections[s.section].push(s);
+    });
+    return { sections, order };
+  }, []);
+
+  return (
+    <div className="feed">
+      {filteredStreams.map(stream => {
+        const filtered = getFilteredStories(stream.id);
+        if (filtered.length === 0) return null;
+        const { sections, order } = groupBySection(filtered);
+        return (
+          <div key={stream.id} className="stream-group">
+            <div className="stream-group-header">
+              <span className="stream-group-dot" style={{ background: sc(stream.id) }}></span>
+              <span className="stream-group-name">{stream.name}</span>
+              <span className="stream-group-count">{filtered.length} stories</span>
+            </div>
+            {order.map(sectionName => (
+              <div key={sectionName}>
+                <div className="section-label">{sectionName}</div>
+                {sections[sectionName].map(story => (
+                  <StoryCard
+                    key={story.id}
+                    story={story}
+                    streamId={stream.id}
+                    isRead={readSet.has(story.id)}
+                    onToggleRead={onToggleRead}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div className="loading-container">
+      <div className="loading-spinner"></div>
+      <div className="loading-text">Loading your digest…</div>
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="empty-state">
+      <div className="empty-icon">📰</div>
+      <div className="empty-title">No digest yet</div>
+      <div className="empty-body">
+        Your TLDR digest will appear here once the daily pipeline runs. Check back tomorrow morning.
+      </div>
+    </div>
+  );
+}
+
+
+/* ===================== APP ===================== */
+
+function App() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [readSet, setReadSet] = useState(() => getReadSet());
+  const [activeStream, setActiveStream] = useState(null);
+  const [timeFilter, setTimeFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchRef = useRef(null);
+
+  useEffect(() => {
+    fetchDigest().then(d => {
+      setData(d);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  // Cmd+K shortcut
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        searchRef.current && searchRef.current.focus();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  const toggleRead = useCallback((id) => {
+    setReadSet(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      saveReadSet(next);
+      return next;
+    });
+  }, []);
+
+  const handleStreamClick = useCallback((streamId) => {
+    setActiveStream(prev => prev === streamId ? null : streamId);
+  }, []);
+
+  const handlePickClick = useCallback((storyId) => {
+    // Scroll to the story card if possible
+    const el = document.getElementById(storyId);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, []);
+
+  if (loading) {
+    return (
+      <div>
+        <Nav
+          totalStories={0}
+          streamCount={0}
+          searchQuery=""
+          onSearchChange={() => {}}
+          searchRef={searchRef}
+        />
+        <LoadingState />
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div>
+        <Nav
+          totalStories={0}
+          streamCount={0}
+          searchQuery=""
+          onSearchChange={() => {}}
+          searchRef={searchRef}
+        />
+        <EmptyState />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <Nav
+        totalStories={data.totalStories}
+        streamCount={data.streams.length}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchRef={searchRef}
+      />
+      <Hero
+        dayLabel={data.dayLabel}
+        totalStories={data.totalStories}
+        totalReadMin={data.totalReadMin}
+        streamCount={data.streams.length}
+      />
+      <TopPicks
+        topPicks={data.topPicks}
+        storyById={data.storyById}
+        streamById={data.streamById}
+        onPickClick={handlePickClick}
+      />
+      <div className="main-layout">
+        <Sidebar
+          streams={data.streams}
+          stories={data.stories}
+          activeStream={activeStream}
+          onStreamClick={handleStreamClick}
+          readSet={readSet}
+        />
+        <div>
+          <Filters timeFilter={timeFilter} onTimeFilter={setTimeFilter} />
+          <Feed
+            streams={data.streams}
+            stories={data.stories}
+            readSet={readSet}
+            onToggleRead={toggleRead}
+            activeStream={activeStream}
+            timeFilter={timeFilter}
+            searchQuery={searchQuery}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
