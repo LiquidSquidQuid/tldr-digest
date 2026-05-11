@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#111111">
+<title>The TLDR Digest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root {
+  --bg: #f8f7f4; --surface: #fff; --text: #1a1a1a; --text-2: #555;
+  --text-3: #888; --border: #e8e6e1; --border-strong: #d0cdc6;
+  --accent: #4A90D9; --masthead-bg: #111; --masthead-text: #f8f7f4;
+  --nav-bg: #f0eee9; --card-hover: #faf9f7;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06); --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+  --serif: 'Instrument Serif', Georgia, serif;
+  --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0a0a0a; --surface: #161616; --text: #e8e6e1; --text-2: #a0a0a0;
+    --text-3: #666; --border: #222; --border-strong: #333;
+    --masthead-bg: #000; --masthead-text: #f0eee9;
+    --nav-bg: #111; --card-hover: #1a1a1a;
+    --shadow: 0 1px 3px rgba(0,0,0,0.2); --shadow-lg: 0 4px 12px rgba(0,0,0,0.3);
+  }
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased}
+.masthead{background:var(--masthead-bg);color:var(--masthead-text);text-align:center;padding:28px 20px 20px}
+.masthead-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.2em;opacity:.45;margin-bottom:6px}
+.masthead-title{font-family:var(--serif);font-size:2.4rem;font-weight:400;letter-spacing:-.01em;line-height:1.1}
+.masthead-date{font-size:.82rem;opacity:.55;margin-top:8px;font-style:italic}
+.stats-bar{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 16px;font-size:.72rem;font-weight:500;color:var(--text-3);background:var(--nav-bg);border-bottom:1px solid var(--border)}
+.dot{width:4px;height:4px;border-radius:50%;background:var(--text-3);display:inline-block}
+.tab-bar{display:flex;gap:8px;padding:14px 16px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;background:var(--nav-bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.tab-bar::-webkit-scrollbar{display:none}
+.tab-btn{flex-shrink:0;padding:8px 16px;border:1.5px solid var(--border);border-radius:24px;background:var(--surface);color:var(--text-2);font-family:var(--sans);font-size:.78rem;font-weight:500;cursor:pointer;transition:all .15s ease;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.tab-btn:hover{border-color:var(--stream-color,var(--accent));color:var(--text)}
+.tab-btn.active{background:var(--stream-color,var(--accent));color:#fff;border-color:var(--stream-color,var(--accent));box-shadow:0 2px 8px color-mix(in srgb,var(--stream-color,var(--accent)) 30%,transparent)}
+.content{max-width:640px;margin:0 auto;padding:0 16px 40px}
+.stream-panel{display:none;flex-direction:column}
+.stream-panel.active{display:flex}
+.section-header{font-family:var(--sans);font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--text-3);padding:24px 0 10px;border-bottom:1.5px solid var(--border-strong);margin-bottom:14px}
+.stream-panel>div:first-child .section-header{padding-top:16px}
+.story-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:10px;transition:background .15s,box-shadow .15s}
+.story-card:hover{background:var(--card-hover);box-shadow:var(--shadow-lg)}
+.story-meta{margin-bottom:6px}
+.time-badge{font-size:.65rem;font-weight:500;padding:2px 8px;border-radius:6px;background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--text-3)}
+.story-title{font-family:var(--serif);font-size:1.15rem;font-weight:400;line-height:1.3;margin-bottom:8px}
+.story-summary{font-size:.88rem;color:var(--text-2);line-height:1.6}
+.read-more{display:inline-block;margin-top:10px;font-size:.78rem;font-weight:500;color:var(--accent);text-decoration:none}
+.read-more:hover{opacity:.7}
+.footer{text-align:center;padding:28px 16px;font-size:.7rem;color:var(--text-3);border-top:1px solid var(--border)}
+.empty-state{text-align:center;padding:80px 20px}
+.empty-icon{font-size:3rem;margin-bottom:16px}
+.empty-title{font-family:var(--serif);font-size:1.5rem;margin-bottom:8px}
+.empty-body{font-size:.9rem;color:var(--text-2);max-width:360px;margin:0 auto}
+.loading{text-align:center;padding:60px 20px;color:var(--text-3);font-size:.9rem}
+.loading .spinner{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:480px){.masthead-title{font-size:1.9rem}.content{padding:0 12px 32px}.story-card{padding:15px;border-radius:10px}.story-title{font-size:1.05rem}.tab-btn{padding:7px 13px;font-size:.74rem}}
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="masthead-label">Your Daily Tech Intelligence</div>
+  <h1 class="masthead-title">The TLDR Digest</h1>
+  <div class="masthead-date" id="digest-date">Loading...</div>
+</header>
+<div class="stats-bar" id="stats-bar" style="display:none">
+  <span id="stat-streams"></span>
+  <span class="dot"></span>
+  <span id="stat-stories"></span>
+  <span class="dot"></span>
+  <span id="stat-time"></span>
+</div>
+<nav class="tab-bar" id="tab-bar" role="tablist" style="display:none"></nav>
+<main class="content" id="content">
+  <div class="loading"><div class="spinner"></div>Loading your digest...</div>
+</main>
+<footer class="footer" id="footer">Generated by Claude · Sources: TLDR Newsletters</footer>
+
+<script>
+const SUPABASE_URL = 'https://zuxznsgefrjkxokldoah.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1eHpuc2dlZnJqa3hva2xkb2FoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MzA1MjIsImV4cCI6MjA5MzQwNjUyMn0.QU4csmfWGbRmCZUbcZWq142x44T1kR7oh-pwo9eMofE';
+
+const STREAM_CFG = {
+  'TLDR':                      {color:'#4A90D9',icon:'\u{1F4F1}',short:'Main'},
+  'TLDR AI':                   {color:'#8B5CF6',icon:'\u{1F916}',short:'AI'},
+  'TLDR Dev':                  {color:'#10B981',icon:'\u{1F4BB}',short:'Dev'},
+  'TLDR Information Security': {color:'#EF4444',icon:'\u{1F512}',short:'InfoSec'},
+  'TLDR IT':                   {color:'#6366F1',icon:'\u{1F3E2}',short:'IT'},
+  'TLDR Fintech':              {color:'#06B6D4',icon:'\u{1F4B0}',short:'Fintech'},
+  'TLDR Design':               {color:'#F59E0B',icon:'\u{1F3A8}',short:'Design'},
+  'TLDR Crypto':               {color:'#F97316',icon:'\u{20BF}',short:'Crypto'},
+  'TLDR Founders':             {color:'#EC4899',icon:'\u{1F680}',short:'Founders'},
+  'TLDR Marketing':            {color:'#14B8A6',icon:'\u{1F4CA}',short:'Marketing'},
+  'TLDR DevOps':               {color:'#7C3AED',icon:'\u{2699}\u{FE0F}',short:'DevOps'},
+  'TLDR Startups':             {color:'#A855F7',icon:'\u{1F331}',short:'Startups'},
+  'TLDR Data':                 {color:'#059669',icon:'\u{1F4C8}',short:'Data'},
+};
+const STREAM_ORDER = Object.keys(STREAM_CFG);
+
+function fmtDate(d){
+  return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+
+function escHtml(s){
+  const d=document.createElement('div');d.textContent=s;return d.innerHTML;
+}
+
+async function loadDigest(){
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const {data:latest} = await sb.from('digest_entries').select('digest_date').order('digest_date',{ascending:false}).limit(1).single();
+  if(!latest){
+    document.getElementById('content').innerHTML = '<div class="empty-state"><p class="empty-icon">\u{1F4F0}</p><p class="empty-title">No digest yet</p><p class="empty-body">Your first TLDR digest will appear here once the daily pipeline runs. Check back tomorrow morning.</p></div>';
+    document.getElementById('digest-date').textContent = fmtDate(new Date().toISOString().split('T')[0]);
+    return;
+  }
+
+  const digestDate = latest.digest_date;
+  document.getElementById('digest-date').textContent = fmtDate(digestDate);
+
+  const {data:entries} = await sb.from('digest_entries').select('*').eq('digest_date', digestDate).order('stream_name');
+  if(!entries||!entries.length){
+    document.getElementById('content').innerHTML = '<div class="empty-state"><p class="empty-icon">\u{1F4F0}</p><p class="empty-title">No stories found</p><p class="empty-body">Digest entries are empty for this date.</p></div>';
+    return;
+  }
+
+  const streams = new Map();
+  let totalStories = 0;
+  entries.forEach(e => {
+    if(!streams.has(e.stream_name)) streams.set(e.stream_name, []);
+    streams.get(e.stream_name).push(e);
+    totalStories += (e.stories||[]).length;
+  });
+
+  const sorted = Array.from(streams.entries()).sort(([a],[b]) => {
+    const ai = STREAM_ORDER.indexOf(a), bi = STREAM_ORDER.indexOf(b);
+    return (ai===-1?99:ai) - (bi===-1?99:bi);
+  });
+
+  document.getElementById('stats-bar').style.display = 'flex';
+  document.getElementById('stat-streams').textContent = sorted.length + ' newsletters';
+  document.getElementById('stat-stories').textContent = totalStories + ' stories';
+  document.getElementById('stat-time').textContent = '~' + Math.max(5, Math.round(totalStories*0.2)) + ' min read';
+
+  const tabBar = document.getElementById('tab-bar');
+  tabBar.style.display = 'flex';
+  tabBar.innerHTML = '';
+
+  const content = document.getElementById('content');
+  content.innerHTML = '';
+
+  sorted.forEach(([name, sectionEntries], idx) => {
+    const cfg = STREAM_CFG[name] || {color:'#6B7280',icon:'\u{1F4F0}',short:name.replace('TLDR ','')};
+    const streamId = name.toLowerCase().replace(/\s+/g,'-');
+
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (idx===0?' active':'');
+    btn.setAttribute('data-stream', streamId);
+    btn.style.setProperty('--stream-color', cfg.color);
+    btn.textContent = cfg.icon + ' ' + cfg.short;
+    btn.addEventListener('click', () => switchTab(streamId, btn));
+    tabBar.appendChild(btn);
+
+    const panel = document.createElement('div');
+    panel.id = streamId;
+    panel.className = 'stream-panel' + (idx===0?' active':'');
+
+    sectionEntries.forEach(entry => {
+      const sec = document.createElement('div');
+      sec.innerHTML = '<h3 class="section-header">' + escHtml(entry.section_name) + '</h3>';
+      (entry.stories||[]).forEach(story => {
+        const linkHtml = story.link ? '<a href="'+escHtml(story.link)+'" target="_blank" rel="noopener" class="read-more">Read source \u{2192}</a>' : '';
+        sec.innerHTML += '<article class="story-card"><div class="story-meta"><span class="time-badge">'+escHtml(story.read_time||'')+'</span></div><h4 class="story-title">'+escHtml(story.title)+'</h4><p class="story-summary">'+escHtml(story.claude_take||story.summary)+'</p>'+linkHtml+'</article>';
+      });
+      panel.appendChild(sec);
+    });
+
+    content.appendChild(panel);
+  });
+
+  document.getElementById('footer').innerHTML = 'Generated by Claude \u{00B7} Sources: TLDR Newsletters<br>' + fmtDate(digestDate);
+}
+
+function switchTab(streamId, btn){
+  document.querySelectorAll('.tab-btn').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.stream-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(streamId).classList.add('active');
+  if(window.innerWidth<=768) document.querySelector('.content').scrollIntoView({behavior:'smooth',block:'start'});
+  btn.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+}
+
+let touchX=0;
+document.addEventListener('touchstart',e=>{touchX=e.changedTouches[0].screenX},{passive:true});
+document.addEventListener('touchend',e=>{
+  const diff=touchX-e.changedTouches[0].screenX;
+  if(Math.abs(diff)>80){
+    const tabs=Array.from(document.querySelectorAll('.tab-btn'));
+    const active=document.querySelector('.tab-btn.active');
+    const idx=tabs.indexOf(active);
+    const next=diff>0?Math.min(idx+1,tabs.length-1):Math.max(idx-1,0);
+    if(next!==idx)tabs[next].click();
+  }
+},{passive:true});
+
+loadDigest();
+</script>
+</body>
+</html>
