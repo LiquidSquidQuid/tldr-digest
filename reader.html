@@ -499,18 +499,26 @@ body {
   padding: 16px 0 8px;
 }
 
-/* === STORY CARD === */
+/* === STORY CARD — Expandable take with color fade === */
 .story-card {
   background: var(--surface);
   border: 1px solid var(--border);
+  border-left: 3px solid transparent;
   border-radius: var(--radius);
   padding: 20px;
   margin-bottom: 10px;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  cursor: pointer;
+  transition: border-color 0.4s ease, box-shadow 0.4s ease, background 0.4s ease, border-left-color 0.4s ease;
 }
 .story-card:hover {
   border-color: var(--border-strong);
   box-shadow: var(--shadow);
+}
+.story-card.expanded {
+  border-left-color: var(--stream-color, var(--accent));
+  background: color-mix(in srgb, var(--stream-color, var(--accent)) 4%, var(--surface));
+  box-shadow: var(--shadow-lg);
+  cursor: default;
 }
 .story-card.kbd-focus {
   border-color: var(--accent);
@@ -560,6 +568,20 @@ body {
   border-radius: 50%;
   flex-shrink: 0;
 }
+.expand-chevron {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+  transition: transform 0.35s ease, color 0.35s ease;
+  flex-shrink: 0;
+}
+.story-card.expanded .expand-chevron {
+  transform: rotate(180deg);
+  color: var(--stream-color, var(--accent));
+}
 .read-toggle {
   width: 22px;
   height: 22px;
@@ -593,11 +615,26 @@ body {
   font-size: 0.88rem;
   color: var(--text-2);
   line-height: 1.65;
-  margin-bottom: 14px;
+  margin-bottom: 0;
+}
+/* Expand area — CSS grid row trick for smooth height */
+.story-expand {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.35s ease;
+}
+.story-card.expanded .story-expand {
+  grid-template-rows: 1fr;
+}
+.story-expand-inner {
+  overflow: hidden;
+}
+.story-expand-content {
+  padding-top: 14px;
 }
 .story-take {
   border-left: 3px solid var(--stream-color, var(--accent));
-  background: var(--surface-2);
+  background: color-mix(in srgb, var(--stream-color, var(--accent)) 6%, var(--surface-2));
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   padding: 12px 14px;
   margin-bottom: 14px;
@@ -608,7 +645,7 @@ body {
   width: 22px;
   height: 22px;
   border-radius: 6px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  background: linear-gradient(135deg, var(--stream-color, var(--accent)), var(--accent-2));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -642,19 +679,6 @@ body {
   transition: opacity 0.15s;
 }
 .story-link:hover { opacity: 0.7; }
-.story-action-btn {
-  border: none;
-  background: none;
-  color: var(--text-3);
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
-  transition: color 0.15s, background 0.15s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.story-action-btn:hover { color: var(--text-2); background: var(--bg-tint); }
 
 /* === LOADING === */
 .loading-container {
@@ -1084,11 +1108,19 @@ function Filters({ timeFilter, onTimeFilter }) {
 }
 
 function StoryCard({ story, streamId, isRead, onToggleRead, streamShort }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const handleCardClick = useCallback((e) => {
+    if (e.target.closest('a, button')) return;
+    setExpanded(prev => !prev);
+  }, []);
+
   return (
     <article
       id={`story-${story.id}`}
-      className={`story-card${isRead ? ' read-state' : ''}`}
+      className={`story-card${isRead ? ' read-state' : ''}${expanded ? ' expanded' : ''}`}
       style={{ '--stream-color': sc(streamId) }}
+      onClick={handleCardClick}
     >
       <div className="story-top">
         <div className="story-top-left">
@@ -1099,9 +1131,14 @@ function StoryCard({ story, streamId, isRead, onToggleRead, streamShort }) {
           <span className="story-time">{story.readTime}m read</span>
         </div>
         <div className="story-top-right">
+          <span className="expand-chevron">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </span>
           <button
             className={`read-toggle${isRead ? ' checked' : ''}`}
-            onClick={() => onToggleRead(story.id)}
+            onClick={(e) => { e.stopPropagation(); onToggleRead(story.id); }}
             title={isRead ? 'Mark unread' : 'Mark read'}
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -1112,21 +1149,27 @@ function StoryCard({ story, streamId, isRead, onToggleRead, streamShort }) {
       </div>
       <h3 className="story-title">{story.title}</h3>
       {story.summary && <p className="story-summary">{story.summary}</p>}
-      {story.take && (
-        <div className="story-take">
-          <div className="take-avatar">C</div>
-          <div className="take-text">{story.take}</div>
+      <div className="story-expand">
+        <div className="story-expand-inner">
+          <div className="story-expand-content">
+            {story.take && (
+              <div className="story-take">
+                <div className="take-avatar">C</div>
+                <div className="take-text">{story.take}</div>
+              </div>
+            )}
+            <div className="story-footer">
+              {story.url && (
+                <a className="story-link" href={story.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                  Read source
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M3.5 8.5L8.5 3.5M8.5 3.5H4.5M8.5 3.5v4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </a>
+              )}
+            </div>
+          </div>
         </div>
-      )}
-      <div className="story-footer">
-        {story.url && (
-          <a className="story-link" href={story.url} target="_blank" rel="noopener noreferrer">
-            Read source
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M3.5 8.5L8.5 3.5M8.5 3.5H4.5M8.5 3.5v4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </a>
-        )}
       </div>
     </article>
   );
