@@ -920,54 +920,54 @@ body::before{
 <!-- ═══════ DATA SCRIPT ═══════ -->
 <script>
 (async function() {
-  const SUPABASE_URL = ‘https://zuxznsgefrjkxokldoah.supabase.co’;
-  const ANON_KEY = ‘eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1eHpuc2dlZnJqa3hva2xkb2FoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MzA1MjIsImV4cCI6MjA5MzQwNjUyMn0.QU4csmfWGbRmCZUbcZWq142x44T1kR7oh-pwo9eMofE’;
+  const SUPABASE_URL = 'https://zuxznsgefrjkxokldoah.supabase.co';
+  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1eHpuc2dlZnJqa3hva2xkb2FoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MzA1MjIsImV4cCI6MjA5MzQwNjUyMn0.QU4csmfWGbRmCZUbcZWq142x44T1kR7oh-pwo9eMofE';
 
   const STREAMS = {
-    ‘TLDR’:                      { id: ‘tldr’,     short: ‘Main’,     cssVar: ‘--col-tldr’ },
-    ‘TLDR AI’:                   { id: ‘ai’,       short: ‘AI’,       cssVar: ‘--col-ai’ },
-    ‘TLDR Dev’:                  { id: ‘dev’,      short: ‘Dev’,      cssVar: ‘--col-dev’ },
-    ‘TLDR Information Security’: { id: ‘infosec’,  short: ‘InfoSec’,  cssVar: ‘--col-infosec’ },
-    ‘TLDR IT’:                   { id: ‘it’,       short: ‘IT’,       cssVar: ‘--col-it’ },
-    ‘TLDR Fintech’:              { id: ‘fintech’,  short: ‘Fintech’,  cssVar: ‘--col-fintech’ },
-    ‘TLDR Design’:               { id: ‘design’,   short: ‘Design’,   cssVar: ‘--col-design’ },
-    ‘TLDR Crypto’:               { id: ‘crypto’,   short: ‘Crypto’,   cssVar: ‘--col-crypto’ },
-    ‘TLDR Founders’:             { id: ‘founders’, short: ‘Founders’, cssVar: ‘--col-founders’ },
-    ‘TLDR Marketing’:            { id: ‘marketing’,short: ‘Marketing’,cssVar: ‘--col-marketing’ },
-    ‘TLDR DevOps’:               { id: ‘devops’,   short: ‘DevOps’,   cssVar: ‘--col-devops’ },
-    ‘TLDR Data’:                 { id: ‘data’,     short: ‘Data’,     cssVar: ‘--col-data’ },
+    'TLDR':                      { id: 'tldr',     short: 'Main',     cssVar: '--col-tldr' },
+    'TLDR AI':                   { id: 'ai',       short: 'AI',       cssVar: '--col-ai' },
+    'TLDR Dev':                  { id: 'dev',      short: 'Dev',      cssVar: '--col-dev' },
+    'TLDR Information Security': { id: 'infosec',  short: 'InfoSec',  cssVar: '--col-infosec' },
+    'TLDR IT':                   { id: 'it',       short: 'IT',       cssVar: '--col-it' },
+    'TLDR Fintech':              { id: 'fintech',  short: 'Fintech',  cssVar: '--col-fintech' },
+    'TLDR Design':               { id: 'design',   short: 'Design',   cssVar: '--col-design' },
+    'TLDR Crypto':               { id: 'crypto',   short: 'Crypto',   cssVar: '--col-crypto' },
+    'TLDR Founders':             { id: 'founders', short: 'Founders', cssVar: '--col-founders' },
+    'TLDR Marketing':            { id: 'marketing',short: 'Marketing',cssVar: '--col-marketing' },
+    'TLDR DevOps':               { id: 'devops',   short: 'DevOps',   cssVar: '--col-devops' },
+    'TLDR Data':                 { id: 'data',     short: 'Data',     cssVar: '--col-data' },
   };
 
   function getStreamInfo(name) {
-    return STREAMS[name] || { id: ‘unknown’, short: name, cssVar: ‘--col-tldr’ };
+    return STREAMS[name] || { id: 'unknown', short: name, cssVar: '--col-tldr' };
   }
 
   function escapeHTML(str) {
-    if (!str) return ‘’;
-    const div = document.createElement(‘div’);
+    if (!str) return '';
+    const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
   }
 
   /* ── Nav scroll observer ── */
-  const nav = document.querySelector(‘.nav’);
-  const hero = document.getElementById(‘hero’);
+  const nav = document.querySelector('.nav');
+  const hero = document.getElementById('hero');
   if (hero && nav) {
     const obs = new IntersectionObserver(([e]) => {
-      nav.classList.toggle(‘nav-scrolled’, !e.isIntersecting);
-    }, { threshold: 0, rootMargin: ‘-56px 0px 0px 0px’ });
+      nav.classList.toggle('nav-scrolled', !e.isIntersecting);
+    }, { threshold: 0, rootMargin: '-56px 0px 0px 0px' });
     obs.observe(hero);
   }
 
   /* ── Hero date line ── */
   const now = new Date();
-  const dayNames = [‘SUNDAY’,’MONDAY’,’TUESDAY’,’WEDNESDAY’,’THURSDAY’,’FRIDAY’,’SATURDAY’];
-  const monthNames = [‘JANUARY’,’FEBRUARY’,’MARCH’,’APRIL’,’MAY’,’JUNE’,’JULY’,’AUGUST’,’SEPTEMBER’,’OCTOBER’,’NOVEMBER’,’DECEMBER’];
-  document.getElementById(‘hero-date’).textContent =
-    dayNames[now.getDay()] + ‘, ‘ + monthNames[now.getMonth()] + ‘ ‘ + now.getDate() + ‘ · ‘ + now.getFullYear();
+  const dayNames = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+  const monthNames = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+  document.getElementById('hero-date').textContent =
+    dayNames[now.getDay()] + ', ' + monthNames[now.getMonth()] + ' ' + now.getDate() + ' · ' + now.getFullYear();
 
   try {
-    const today = now.toISOString().split(‘T’)[0];
+    const today = now.toISOString().split('T')[0];
     let res = await fetch(
       `${SUPABASE_URL}/rest/v1/digest_entries?digest_date=eq.${today}&select=*`,
       { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } }
@@ -982,7 +982,7 @@ body::before{
       );
       const latestRows = await latestRes.json();
       if (!latestRows || latestRows.length === 0) {
-        document.getElementById(‘hero-stats-line’).textContent = "No digest available yet — check back soon";
+        document.getElementById('hero-stats-line').textContent = "No digest available yet — check back soon";
         return;
       }
       const latestDate = latestRows[0].digest_date;
@@ -994,7 +994,7 @@ body::before{
     }
 
     if (!Array.isArray(rows) || rows.length === 0) {
-      document.getElementById(‘hero-stats-line’).textContent = "No digest available yet — check back soon";
+      document.getElementById('hero-stats-line').textContent = "No digest available yet — check back soon";
       return;
     }
 
@@ -1025,24 +1025,24 @@ body::before{
 
     // -- Hero stats line --
     const picksCount = picks.length;
-    document.getElementById(‘hero-stats-line’).textContent =
-      totalStories + ‘ stories · ‘ + distinctStreams + ‘ streams · ‘ + picksCount + ‘ hand-picked picks’;
+    document.getElementById('hero-stats-line').textContent =
+      totalStories + ' stories · ' + distinctStreams + ' streams · ' + picksCount + ' hand-picked picks';
 
     // -- Browser preview: pick list (top 5) --
-    const listEl = document.getElementById(‘browser-pick-list’);
+    const listEl = document.getElementById('browser-pick-list');
     if (picks.length > 0) {
-      let listHTML = ‘’;
+      let listHTML = '';
       for (let i = 0; i < Math.min(5, picks.length); i++) {
         const p = picks[i];
         const info = getStreamInfo(p.stream_name);
         listHTML +=
-          ‘<div class="browser-pick-item">’ +
-            ‘<div class="browser-pick-num">’ + p.pick_rank + ‘</div>’ +
-            ‘<div class="browser-pick-info">’ +
-              ‘<h4>’ + escapeHTML(p.title) + ‘</h4>’ +
-              ‘<span>’ + info.short + ‘ · ‘ + (p.read_time || ‘3’) + ‘ min</span>’ +
-            ‘</div>’ +
-          ‘</div>’;
+          '<div class="browser-pick-item">' +
+            '<div class="browser-pick-num">' + p.pick_rank + '</div>' +
+            '<div class="browser-pick-info">' +
+              '<h4>' + escapeHTML(p.title) + '</h4>' +
+              '<span>' + info.short + ' · ' + (p.read_time || '3') + ' min</span>' +
+            '</div>' +
+          '</div>';
       }
       listEl.innerHTML = listHTML;
     }
@@ -1050,23 +1050,23 @@ body::before{
     // -- Browser preview: featured card (pick #1) --
     if (picks.length > 0) {
       const top = picks[0];
-      document.getElementById(‘featured-title’).textContent = top.title;
-      document.getElementById(‘featured-summary’).textContent = top.summary || ‘No summary available.’;
-      document.getElementById(‘featured-take’).textContent = top.claude_take || ‘No take available yet.’;
+      document.getElementById('featured-title').textContent = top.title;
+      document.getElementById('featured-summary').textContent = top.summary || 'No summary available.';
+      document.getElementById('featured-take').textContent = top.claude_take || 'No take available yet.';
     }
 
     // -- Stat band --
-    document.getElementById(‘stat-newsletters’).textContent = distinctStreams;
-    document.getElementById(‘stat-stories’).textContent = totalStories;
-    document.getElementById(‘stat-readtime’).textContent = ‘~’ + avgRead;
+    document.getElementById('stat-newsletters').textContent = distinctStreams;
+    document.getElementById('stat-stories').textContent = totalStories;
+    document.getElementById('stat-readtime').textContent = '~' + avgRead;
 
     // -- CTA sub --
-    document.getElementById(‘cta-sub’).textContent =
-      "Today’s digest has " + totalStories + " stories from " + distinctStreams + " streams. Takes about " + Math.min(totalRead, 30) + " minutes.";
+    document.getElementById('cta-sub').textContent =
+      "Today's digest has " + totalStories + " stories from " + distinctStreams + " streams. Takes about " + Math.min(totalRead, 30) + " minutes.";
 
   } catch (err) {
-    console.error(‘Failed to fetch digest data:’, err);
-    document.getElementById(‘hero-stats-line’).textContent = ‘loading failed — try refreshing’;
+    console.error('Failed to fetch digest data:', err);
+    document.getElementById('hero-stats-line').textContent = 'loading failed — try refreshing';
   }
 })();
 </script>
