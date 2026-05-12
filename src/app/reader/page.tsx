@@ -599,7 +599,7 @@ export default function ReaderPage() {
         <div className={styles.navInner}>
           <a href="/" className={styles.brand}>
             <span className="brand-mark">D</span>
-            Dispatch <small className={styles.brandSub}>by Claude</small>
+            Dispatch <small className={styles.brandSub}>by Claude, for Abhi</small>
           </a>
           <label className={styles.searchBox}>
             <svg className={styles.searchIcon} width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -1006,7 +1006,7 @@ export default function ReaderPage() {
 
             <div className={styles.pageFooter}>
               <div className={styles.footerBrand}>
-                <em>Dispatch</em> · curated by Claude
+                <em>Dispatch</em> · curated by Claude, for Abhi
               </div>
               <div>{data.dayLabel}</div>
             </div>

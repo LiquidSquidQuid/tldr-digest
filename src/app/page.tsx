@@ -25,7 +25,7 @@ export default async function Landing() {
         <div className={styles.navInner}>
           <div className={styles.brand}>
             <span className="brand-mark">D</span>
-            Dispatch <small className={styles.brandSub}>by Claude</small>
+            Dispatch <small className={styles.brandSub}>by Claude, for Abhi</small>
           </div>
           <div className={styles.navActions}>
             <a href="/reader" className="btn btn-primary">
@@ -213,7 +213,7 @@ export default async function Landing() {
         <footer className={styles.footer}>
           <div className={styles.footerBrand}>
             <span style={{ color: "var(--ink)" }}>Dispatch</span>
-            <span className={styles.footerMono}> · curated by Claude</span>
+            <span className={styles.footerMono}> · curated by Claude, for Abhi</span>
           </div>
         </footer>
       </div>
