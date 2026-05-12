@@ -311,11 +311,17 @@
 .storyRead {
   opacity: 0.4;
 }
-.storyRead .storyMeta,
 .storyRead .storySummary,
 .storyRead .takeTeaser,
 .storyRead .sourceRow {
   display: none;
+}
+.storyRead .storyMeta .readTimeBadge,
+.storyRead .storyMeta .sectionName {
+  display: none;
+}
+.storyRead .storyMeta {
+  margin-bottom: 0;
 }
 .storyRead .storyH3 {
   margin-bottom: 0; font-size: 18px;
