@@ -1,0 +1,191 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════
+   DISPATCH — Design Tokens & Global Styles
+   Direction: Glossy SaaS (Fraunces + Geist)
+   ═══════════════════════════════════════════════ */
+
+:root {
+  /* ── Core surfaces ── */
+  --bg: #f5f1ea;
+  --bg-warm: #ede6db;
+  --paper: #fdfbf6;
+  --surface: #ffffff;
+  --surface-2: #f8f4ec;
+
+  /* ── Ink ── */
+  --ink: #14131a;
+  --ink-2: #3a3640;
+  --text-2: #54525e;
+  --text-3: #8a8794;
+
+  /* ── Borders ── */
+  --border: #e6dfd1;
+  --border-strong: #cfc6b3;
+
+  /* ── Accents (gradient triad) ── */
+  --accent: #5b4dff;
+  --accent-2: #c54a9e;
+  --accent-3: #ff6b3d;
+  --accent-tint: #efebff;
+  --accent-deep: #14102e;
+
+  /* ── Stream / topic colors ── */
+  --col-tldr: #2563eb;
+  --col-ai: #7c3aed;
+  --col-dev: #047857;
+  --col-infosec: #dc2626;
+  --col-design: #d97706;
+  --col-fintech: #0891b2;
+  --col-founders: #db2777;
+  --col-devops: #6d28d9;
+  --col-data: #047857;
+  --col-it: #6366f1;
+  --col-crypto: #f97316;
+  --col-marketing: #14b8a6;
+
+  /* ── Typography stacks ── */
+  --sans: var(--font-geist-sans), system-ui, sans-serif;
+  --mono: var(--font-geist-mono), ui-monospace, monospace;
+  --display: "Fraunces", Georgia, serif;
+
+  /* ── Shadows ── */
+  --shadow-sm: 0 1px 2px rgba(20, 19, 26, 0.04);
+  --shadow: 0 4px 16px -4px rgba(20, 19, 26, 0.08);
+  --shadow-hover: 0 14px 32px -12px rgba(91, 77, 255, 0.18);
+  --shadow-hero: 0 22px 50px -22px rgba(20, 19, 26, 0.22);
+  --shadow-browser: 0 60px 120px -40px rgba(20, 19, 26, 0.3),
+    0 24px 60px -24px rgba(91, 77, 255, 0.18);
+  --shadow-cta: 0 60px 100px -40px rgba(91, 77, 255, 0.6);
+}
+
+/* ── Base reset ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss01", "ss02", "cv11";
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+input {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  outline: none;
+  width: 100%;
+}
+
+/* ── Grain overlay ── */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1000;
+  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.45 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  opacity: 0.12;
+  mix-blend-mode: multiply;
+}
+
+/* ── Shared layout shell ── */
+.shell {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 32px;
+  position: relative;
+}
+@media (max-width: 720px) {
+  .shell {
+    padding: 0 18px;
+  }
+}
+
+/* ── Aurora animation ── */
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -20px) scale(1.08); }
+  66% { transform: translate(-20px, 24px) scale(0.96); }
+}
+
+/* ── Live pulse ── */
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.25); }
+  50% { box-shadow: 0 0 0 6px rgba(74, 222, 128, 0); }
+}
+
+/* ── Marquee scroll ── */
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* ── Brand mark ── */
+.brand-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: conic-gradient(from 220deg at 60% 50%, var(--accent), var(--accent-2), var(--accent-3), var(--accent));
+  color: white;
+  display: grid;
+  place-items: center;
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 19px;
+  box-shadow: 0 6px 18px -4px color-mix(in oklab, var(--accent) 50%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* ── Claude avatar ── */
+.claude-avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: conic-gradient(from 220deg, var(--accent), var(--accent-2), var(--accent-3), var(--accent));
+  color: white;
+  display: grid;
+  place-items: center;
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 11px;
+  font-weight: 600;
+  box-shadow: 0 2px 6px -2px var(--accent);
+}
+
+/* ── Gradient text utility ── */
+.gradient-text {
+  background: linear-gradient(120deg, var(--accent) 10%, var(--accent-2) 50%, var(--accent-3) 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
