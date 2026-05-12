@@ -374,6 +374,7 @@ export default function ReaderPage() {
   const refs = useRef<Record<string, HTMLElement | null>>({});
   const inkCleanups = useRef<Record<string, (() => void) | undefined>>({});
   const searchRef = useRef<HTMLInputElement>(null);
+  const feedRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     setReadSet(getReadSet());
@@ -394,6 +395,52 @@ export default function ReaderPage() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  // Scroll feed to top when switching topics
+  useEffect(() => {
+    if (feedRef.current) {
+      feedRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [activeStream]);
+
+  // ── Live progress stats (reactive to readSet) ──
+  const progressStats = useMemo(() => {
+    if (!data) return { read: 0, total: 0, pct: 0, minLeft: 0, minRead: 0, totalMin: 0 };
+    const total = data.totalStories;
+    const read = data.allStories.filter((s) => readSet.has(s.id)).length;
+    const minRead = data.allStories
+      .filter((s) => readSet.has(s.id))
+      .reduce((a, s) => a + s.readTime, 0);
+    const minLeft = data.totalReadMin - minRead;
+    const pct = total > 0 ? Math.round((read / total) * 100) : 0;
+    return { read, total, pct, minLeft, minRead, totalMin: data.totalReadMin };
+  }, [data, readSet]);
+
+  // ── Consumption history (persist daily read counts) ──
+  const HISTORY_KEY = "dispatch:history";
+
+  const consumptionHistory = useMemo(() => {
+    if (!data) return [];
+    try {
+      const raw = localStorage.getItem(HISTORY_KEY);
+      const hist: { date: string; read: number; total: number }[] = raw ? JSON.parse(raw) : [];
+      // Update today's entry
+      const today = data.date;
+      const todayRead = data.allStories.filter((s) => readSet.has(s.id)).length;
+      const idx = hist.findIndex((h) => h.date === today);
+      if (idx >= 0) {
+        hist[idx] = { date: today, read: todayRead, total: data.totalStories };
+      } else {
+        hist.push({ date: today, read: todayRead, total: data.totalStories });
+      }
+      // Keep last 14 days
+      const trimmed = hist.slice(-14);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(trimmed));
+      return trimmed;
+    } catch {
+      return [{ date: data.date, read: progressStats.read, total: progressStats.total }];
+    }
+  }, [data, readSet, progressStats.read, progressStats.total]);
 
   const toggleRead = useCallback(
     (id: string) => {
@@ -568,26 +615,82 @@ export default function ReaderPage() {
             <div className={styles.heroStats}>
               <div className={styles.heroStat}>
                 <div className={styles.heroStatV}>
-                  {data.totalStories}
-                  <span className={styles.heroStatUnit}>stories</span>
+                  {progressStats.read}<span className={styles.heroStatSlash}>/</span>{progressStats.total}
                 </div>
-                <div className={styles.heroStatL}>curated today</div>
+                <div className={styles.heroStatL}>stories read</div>
               </div>
               <div className={styles.heroStat}>
                 <div className={styles.heroStatV}>
-                  {data.streams.length}
-                  <span className={styles.heroStatUnit}>topics</span>
+                  {progressStats.pct}<span className={styles.heroStatUnit}>%</span>
                 </div>
-                <div className={styles.heroStatL}>across sources</div>
+                <div className={styles.heroStatL}>consumed</div>
               </div>
               <div className={styles.heroStat}>
                 <div className={styles.heroStatV}>
-                  ~{Math.round(data.totalReadMin / 4)}
+                  ~{Math.max(1, Math.round(progressStats.minLeft / 4))}
                   <span className={styles.heroStatUnit}>min</span>
                 </div>
-                <div className={styles.heroStatL}>to read it all</div>
+                <div className={styles.heroStatL}>remaining</div>
               </div>
             </div>
+
+            {/* ── Progress bar ── */}
+            <div className={styles.progressBar}>
+              <div
+                className={styles.progressFill}
+                style={{ width: `${progressStats.pct}%` }}
+              />
+            </div>
+
+            {/* ── Consumption sparkline ── */}
+            {consumptionHistory.length > 1 && (
+              <div className={styles.sparkWrap}>
+                <svg
+                  className={styles.sparkSvg}
+                  viewBox={`0 0 ${(consumptionHistory.length - 1) * 28} 40`}
+                  preserveAspectRatio="none"
+                >
+                  <defs>
+                    <linearGradient id="sparkGrad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.6" />
+                      <stop offset="50%" stopColor="var(--accent-2)" stopOpacity="0.8" />
+                      <stop offset="100%" stopColor="var(--accent-3)" stopOpacity="1" />
+                    </linearGradient>
+                    <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--accent-2)" stopOpacity="0.25" />
+                      <stop offset="100%" stopColor="var(--accent-2)" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  {(() => {
+                    const pts = consumptionHistory.map((h) =>
+                      h.total > 0 ? (h.read / h.total) * 100 : 0
+                    );
+                    const maxY = 40;
+                    const w = (consumptionHistory.length - 1) * 28;
+                    const coords = pts.map((p, i) => ({
+                      x: i * 28,
+                      y: maxY - (p / 100) * (maxY - 4),
+                    }));
+                    const line = coords.map((c, i) =>
+                      i === 0 ? `M${c.x},${c.y}` : `L${c.x},${c.y}`
+                    ).join(" ");
+                    const area = `${line} L${w},${maxY} L0,${maxY} Z`;
+                    return (
+                      <>
+                        <path d={area} fill="url(#sparkFill)" />
+                        <path d={line} fill="none" stroke="url(#sparkGrad)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                        {coords.map((c, i) => (
+                          <circle key={i} cx={c.x} cy={c.y} r="3" fill="var(--accent-2)" opacity={i === coords.length - 1 ? 1 : 0.4} />
+                        ))}
+                      </>
+                    );
+                  })()}
+                </svg>
+                <div className={styles.sparkLabel}>
+                  {consumptionHistory.length} day consumption
+                </div>
+              </div>
+            )}
           </div>
         </section>
 
@@ -675,7 +778,7 @@ export default function ReaderPage() {
           </aside>
 
           {/* ── Main Feed ── */}
-          <main className={styles.main}>
+          <main className={styles.main} ref={feedRef}>
             <div className={styles.feedHead}>
               <div className={styles.feedHeadL}>
                 {activeStream
