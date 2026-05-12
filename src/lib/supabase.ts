@@ -81,7 +81,7 @@ function formatDate(dateStr: string): string {
 async function query(endpoint: string): Promise<unknown[]> {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
     headers: HEADERS,
-    next: { revalidate: 300 }, // revalidate every 5 minutes
+    cache: "no-store", // always fetch fresh — digest updates once daily
   });
   if (!res.ok) throw new Error(`Supabase query failed: ${res.status}`);
   return res.json();
