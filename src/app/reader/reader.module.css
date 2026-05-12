@@ -297,7 +297,8 @@
 .story {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: 14px; padding: 22px 24px;
-  transition: border-color 0.2s, box-shadow 0.25s ease, transform 0.2s ease, opacity 0.15s;
+  transition: border-color 0.2s, box-shadow 0.25s ease, transform 0.2s ease,
+              opacity 0.3s ease, padding 0.3s ease;
   position: relative; cursor: pointer;
 }
 .story:hover {
@@ -310,35 +311,49 @@
 }
 .storyRead {
   opacity: 0.4;
-  padding: 12px 18px;
+  padding: 10px 18px;
 }
+/* Smooth collapse for hidden children — fade + shrink instead of display:none */
 .storyRead .storySummary,
 .storyRead .takeTeaser,
 .storyRead .sourceRow {
-  display: none;
+  max-height: 0; opacity: 0; overflow: hidden;
+  margin: 0; padding: 0; border: none;
+  transition: max-height 0.3s ease, opacity 0.2s ease, margin 0.3s ease, padding 0.3s ease;
 }
 .storyRead .storyMeta .readTimeBadge,
 .storyRead .storyMeta .sectionName {
-  display: none;
+  max-width: 0; opacity: 0; overflow: hidden;
+  margin: 0; padding: 0;
+  transition: max-width 0.3s ease, opacity 0.2s ease, margin 0.3s ease;
 }
 .storyRead .storyMeta {
   margin-bottom: 0;
+  transition: margin 0.3s ease;
 }
 .storyRead .storyH3 {
   margin-bottom: 0; font-size: 18px;
-  color: var(--text-3); text-align: center;
+  color: var(--text-3);
+  transition: font-size 0.3s ease, color 0.3s ease, margin 0.3s ease;
 }
 .storyMeta {
   display: flex; align-items: center; gap: 10px;
   font-size: 12px; color: var(--text-3); font-family: var(--mono);
   margin-bottom: 10px;
+  transition: margin 0.3s ease;
 }
 .readTimeBadge {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 3px 8px; background: var(--surface-2);
   border-radius: 100px; font-weight: 500; color: var(--text-2);
+  max-width: 120px; opacity: 1; overflow: hidden;
+  transition: max-width 0.3s ease, opacity 0.2s ease, margin 0.3s ease, padding 0.3s ease;
 }
-.sectionName { color: var(--text-3); }
+.sectionName {
+  color: var(--text-3);
+  max-width: 200px; opacity: 1; overflow: hidden;
+  transition: max-width 0.3s ease, opacity 0.2s ease, margin 0.3s ease;
+}
 .readToggle {
   margin-left: auto; width: 18px; height: 18px; border-radius: 50%;
   border: 1.5px solid var(--border-strong); cursor: pointer;
@@ -352,10 +367,13 @@
   font-family: var(--display); font-size: 24px; line-height: 1.18;
   font-weight: 500; letter-spacing: -0.015em; color: var(--ink);
   margin-bottom: 12px;
+  transition: font-size 0.3s ease, color 0.3s ease, margin 0.3s ease;
 }
 @media (max-width: 720px) { .storyH3 { font-size: 20px; } }
 .storySummary {
   font-size: 15px; line-height: 1.6; color: var(--text-2); margin-bottom: 0;
+  max-height: 200px; opacity: 1; overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.25s ease 0.05s, margin 0.3s ease, padding 0.3s ease;
 }
 
 /* ── Always-visible source link ── */
@@ -363,6 +381,8 @@
   display: flex; align-items: center; gap: 14px;
   margin-top: 12px; padding-top: 10px;
   border-top: 1px dashed color-mix(in oklab, var(--border) 50%, transparent);
+  max-height: 60px; opacity: 1; overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.2s ease, margin 0.3s ease, padding 0.3s ease, border-color 0.3s ease;
 }
 .sourceLink {
   display: inline-flex; align-items: center; gap: 5px;
@@ -380,6 +400,8 @@
   border-top: 1px dashed color-mix(in oklab, var(--border) 60%, transparent);
   font-family: var(--mono); font-size: 11.5px; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.08em;
+  max-height: 60px; opacity: 1; overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.2s ease, margin 0.3s ease, padding 0.3s ease, border-color 0.3s ease;
   color: var(--text-3); transition: color 0.2s;
 }
 .story:hover .takeTeaser { color: var(--accent); }
