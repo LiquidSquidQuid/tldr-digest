@@ -399,8 +399,26 @@ export default function ReaderPage() {
     (id: string) => {
       setReadSet((prev) => {
         const next = new Set(prev);
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
+        if (next.has(id)) {
+          next.delete(id);
+        } else {
+          next.add(id);
+          // Collapse Claude's take if it's currently expanded
+          setExpandedSet((ep) => {
+            if (!ep.has(id)) return ep;
+            const ne = new Set(ep);
+            ne.delete(id);
+            setCollapsingSet((cp) => { const nc = new Set(cp); nc.add(id); return nc; });
+            if (inkCleanups.current[id]) {
+              inkCleanups.current[id]!();
+              delete inkCleanups.current[id];
+            }
+            setTimeout(() => {
+              setCollapsingSet((cp) => { const nc = new Set(cp); nc.delete(id); return nc; });
+            }, 400);
+            return ne;
+          });
+        }
         saveReadSet(next);
         return next;
       });
