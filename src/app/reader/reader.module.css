@@ -297,14 +297,16 @@
 .story {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: 14px; padding: 22px 24px;
-  transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s;
+  transition: border-color 0.2s, box-shadow 0.25s ease, transform 0.2s ease, opacity 0.15s;
   position: relative; cursor: pointer;
 }
 .story:hover {
-  border-color: color-mix(in oklab, var(--stream-color) 45%, var(--border-strong));
-  box-shadow: 0 0 0 1px color-mix(in oklab, var(--stream-color) 15%, transparent),
-              0 4px 20px color-mix(in oklab, var(--stream-color) 12%, transparent),
-              0 1px 4px rgba(0, 0, 0, 0.06);
+  border-color: color-mix(in oklab, var(--stream-color) 70%, var(--border-strong));
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--stream-color) 30%, transparent),
+              0 0 20px 4px color-mix(in oklab, var(--stream-color) 22%, transparent),
+              0 0 40px 8px color-mix(in oklab, var(--stream-color) 10%, transparent),
+              0 8px 30px color-mix(in oklab, var(--stream-color) 18%, transparent);
+  transform: translateY(-2px);
 }
 .storyRead {
   opacity: 0.4;
