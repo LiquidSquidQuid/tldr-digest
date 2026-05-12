@@ -204,6 +204,83 @@
   align-items: center; font-size: 11px; color: var(--text-3); font-family: var(--mono);
 }
 
+/* ── Pick card read / consumed state ── */
+.pickCardRead {
+  opacity: 0.45;
+  background: color-mix(in oklab, var(--accent) 6%, var(--surface));
+  border-color: color-mix(in oklab, var(--accent) 30%, var(--border));
+  transform: scale(0.97);
+  transition: opacity 0.5s ease, transform 0.5s ease, background 0.5s ease, border-color 0.5s ease;
+}
+.pickCardRead:hover { transform: scale(0.97); box-shadow: none; }
+.pickCardRead .pickH3 {
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in oklab, var(--accent-2) 60%, transparent);
+  text-decoration-thickness: 2px;
+  color: var(--text-3);
+}
+.pickCardRead .pickChip { opacity: 0.5; }
+.pickConsumed {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px; height: 44px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  display: grid; place-items: center;
+  color: white; z-index: 2;
+  box-shadow: 0 0 20px color-mix(in oklab, var(--accent-2) 40%, transparent),
+              0 0 40px color-mix(in oklab, var(--accent) 20%, transparent);
+  animation: pickPulse 2s ease-in-out infinite;
+}
+@keyframes pickPulse {
+  0%, 100% { box-shadow: 0 0 20px color-mix(in oklab, var(--accent-2) 40%, transparent),
+                          0 0 40px color-mix(in oklab, var(--accent) 20%, transparent); }
+  50% { box-shadow: 0 0 28px color-mix(in oklab, var(--accent-2) 55%, transparent),
+                     0 0 56px color-mix(in oklab, var(--accent) 30%, transparent); }
+}
+
+/* ── All picks complete message ── */
+.picksComplete {
+  text-align: center; margin-top: 18px; padding-top: 14px;
+  border-top: 1px dashed color-mix(in oklab, var(--accent) 30%, var(--border));
+  font-family: var(--mono); font-size: 12px; color: var(--accent);
+  letter-spacing: 0.04em; font-weight: 500;
+}
+
+/* ── Floating picks FAB ── */
+.picksFab {
+  position: fixed; bottom: 28px; right: 28px; z-index: 100;
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 18px 10px 14px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: white; border: none; border-radius: 100px;
+  font-family: var(--mono); font-size: 12px; font-weight: 600;
+  letter-spacing: 0.04em; cursor: pointer;
+  box-shadow: 0 4px 24px color-mix(in oklab, var(--accent-2) 40%, transparent),
+              0 0 0 1px color-mix(in oklab, var(--accent) 30%, transparent);
+  transition: transform 0.2s, box-shadow 0.2s;
+  animation: fabSlideIn 0.3s ease-out;
+}
+.picksFab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 32px color-mix(in oklab, var(--accent-2) 55%, transparent),
+              0 0 0 1px color-mix(in oklab, var(--accent) 40%, transparent);
+}
+@keyframes fabSlideIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.picksFabDots {
+  display: flex; gap: 5px; align-items: center;
+}
+.picksFabDot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,0.3); border: 1.5px solid rgba(255,255,255,0.6);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+.picksFabDotDone {
+  background: white; border-color: white;
+}
+
 /* ── Layout Grid ── */
 .layout { display: grid; grid-template-columns: 260px 1fr; gap: 36px; align-items: start; }
 @media (max-width: 980px) { .layout { grid-template-columns: 1fr; gap: 16px; } }

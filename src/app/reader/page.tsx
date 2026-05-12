@@ -375,6 +375,8 @@ export default function ReaderPage() {
   const inkCleanups = useRef<Record<string, (() => void) | undefined>>({});
   const searchRef = useRef<HTMLInputElement>(null);
   const feedRef = useRef<HTMLElement>(null);
+  const picksRef = useRef<HTMLElement>(null);
+  const [picksPastView, setPicksPastView] = useState(false);
 
   useEffect(() => {
     setReadSet(getReadSet());
@@ -395,6 +397,18 @@ export default function ReaderPage() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  // Track when picks section scrolls out of view
+  useEffect(() => {
+    const el = picksRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setPicksPastView(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [data]);
 
   // Scroll feed to top when switching topics
   useEffect(() => {
@@ -417,6 +431,13 @@ export default function ReaderPage() {
   }, [data, readSet]);
 
   // ── Consumption history (persist daily read counts) ──
+  const picksReadCount = useMemo(() => {
+    if (!data) return 0;
+    return data.topPicks.filter((p) => readSet.has(p.id)).length;
+  }, [data, readSet]);
+
+  const allPicksRead = data ? picksReadCount >= data.topPicks.length : false;
+
   const HISTORY_KEY = "dispatch:history";
 
   const consumptionHistory = useMemo(() => {
@@ -696,7 +717,7 @@ export default function ReaderPage() {
 
         {/* ── Top Picks ── */}
         {data.topPicks.length > 0 && (
-          <section className={styles.picks}>
+          <section className={styles.picks} ref={picksRef}>
             <div className={styles.picksHead}>
               <div>
                 <div className={styles.picksLabel}>↳ today&apos;s dispatch</div>
@@ -705,19 +726,27 @@ export default function ReaderPage() {
                 </h2>
               </div>
               <div className={styles.picksMeta}>
-                picks · {data.dayLabel.split(",")[0].toLowerCase()}
+                {picksReadCount}/{data.topPicks.length} consumed · {data.dayLabel.split(",")[0].toLowerCase()}
               </div>
             </div>
             <div className={styles.picksGrid}>
               {data.topPicks.map((p, i) => {
                 const stream = data.streams.find((s) => s.id === p.streamId);
+                const isPickRead = readSet.has(p.id);
                 return (
                   <article
                     key={p.id}
-                    className={styles.pickCard}
+                    className={`${styles.pickCard} ${isPickRead ? styles.pickCardRead : ""}`}
                     style={{ "--stream-color": sc(p.streamId) } as React.CSSProperties}
                     onClick={() => jumpTo(p.id)}
                   >
+                    {isPickRead && (
+                      <div className={styles.pickConsumed}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                          <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    )}
                     <div className={styles.pickChip}>
                       <span className={styles.pickDot} />
                       {stream?.short || p.streamId}
@@ -727,13 +756,36 @@ export default function ReaderPage() {
                       <span>
                         {String(i + 1).padStart(2, "0")} / {String(data.topPicks.length).padStart(2, "0")}
                       </span>
-                      <span>{p.readTime} min</span>
+                      <span>{isPickRead ? "done" : `${p.readTime} min`}</span>
                     </div>
                   </article>
                 );
               })}
             </div>
+            {allPicksRead && (
+              <div className={styles.picksComplete}>
+                All five consumed. You&apos;re caught up on today&apos;s best.
+              </div>
+            )}
           </section>
+        )}
+
+        {/* ── Floating "Back to picks" pill ── */}
+        {data.topPicks.length > 0 && !allPicksRead && picksPastView && (
+          <button
+            className={styles.picksFab}
+            onClick={() => picksRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          >
+            <span className={styles.picksFabDots}>
+              {data.topPicks.map((p) => (
+                <span
+                  key={p.id}
+                  className={`${styles.picksFabDot} ${readSet.has(p.id) ? styles.picksFabDotDone : ""}`}
+                />
+              ))}
+            </span>
+            {data.topPicks.length - picksReadCount} picks left
+          </button>
         )}
 
         {/* ── Layout Grid ── */}
