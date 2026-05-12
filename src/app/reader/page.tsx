@@ -756,6 +756,24 @@ export default function ReaderPage() {
                             <h3 className={styles.storyH3}>{story.title}</h3>
                             <p className={styles.storySummary}>{story.summary}</p>
 
+                            {/* Source link — always visible on collapsed cards */}
+                            {story.url && story.url !== "#" && (
+                              <div className={styles.sourceRow}>
+                                <a
+                                  href={story.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={styles.sourceLink}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  Read source
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                                    <path d="M7 17 17 7M7 7h10v10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                  </svg>
+                                </a>
+                              </div>
+                            )}
+
                             {/* Collapsed teaser */}
                             {!isExpanded && !isCollapsing && story.take && (
                               <div className={styles.takeTeaser}>
