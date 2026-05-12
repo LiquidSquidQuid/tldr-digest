@@ -4,6 +4,177 @@ import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import type { DigestData, Story, Stream } from "@/lib/types";
 import styles from "./reader.module.css";
 
+/* ── Procedural ink-spill renderer ──
+   Draws an organic, unique ink blot that expands outward.
+   Uses layered radial blobs with turbulent offsets so every
+   reveal looks like real ink bleeding into paper. */
+
+function animateInkSpill(canvas: HTMLCanvasElement): () => void {
+  const ctxOrNull = canvas.getContext("2d");
+  if (!ctxOrNull) return () => {};
+  const ctx = ctxOrNull;
+
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const W = rect.width;
+  const H = rect.height;
+
+  // Deep dark purple palette
+  const INK_CORE = "rgba(18, 4, 36, 0.95)";    // #120424
+  const INK_MID  = "rgba(26, 10, 46, 0.88)";    // #1a0a2e
+  const INK_EDGE = "rgba(38, 16, 62, 0.72)";    // #26103e
+  const INK_BLEED = "rgba(55, 20, 80, 0.35)";   // bleed fringe
+
+  // Generate random blob field — each blob is an ink droplet
+  const rng = () => Math.random();
+  const BLOB_COUNT = 18 + Math.floor(rng() * 12);
+  interface Blob {
+    cx: number; cy: number;       // center relative to origin
+    rx: number; ry: number;       // ellipse radii
+    rot: number;                  // rotation
+    delay: number;                // stagger timing (0–1)
+    color: string;
+    wobbleAmp: number;            // organic edge distortion amplitude
+    wobbleFreq: number;           // distortion frequency
+    wobblePhase: number;          // randomize phase
+  }
+
+  // Origin: slightly left of center, vertically centered
+  const ox = W * (0.12 + rng() * 0.15);
+  const oy = H * (0.35 + rng() * 0.3);
+
+  const blobs: Blob[] = [];
+  for (let i = 0; i < BLOB_COUNT; i++) {
+    const t = i / BLOB_COUNT;
+    // Spread outward with some randomness
+    const angle = rng() * Math.PI * 2;
+    const spread = (0.15 + t * 0.85) * Math.max(W, H) * (0.5 + rng() * 0.4);
+    const colors = [INK_CORE, INK_CORE, INK_MID, INK_MID, INK_EDGE, INK_BLEED];
+    blobs.push({
+      cx: Math.cos(angle) * spread * (0.6 + rng() * 0.8),
+      cy: Math.sin(angle) * spread * (0.3 + rng() * 0.5),
+      rx: (30 + rng() * 90) * (1 + t * 1.5),
+      ry: (20 + rng() * 60) * (1 + t * 1.2),
+      rot: rng() * Math.PI,
+      delay: t * 0.6 + rng() * 0.15,
+      color: colors[Math.floor(rng() * colors.length)],
+      wobbleAmp: 3 + rng() * 8,
+      wobbleFreq: 3 + Math.floor(rng() * 5),
+      wobblePhase: rng() * Math.PI * 2,
+    });
+  }
+
+  // Add extra coverage blobs to fill corners
+  const corners = [
+    { x: 0, y: 0 }, { x: W, y: 0 },
+    { x: 0, y: H }, { x: W, y: H },
+    { x: W * 0.5, y: 0 }, { x: W * 0.5, y: H },
+    { x: W, y: H * 0.5 },
+  ];
+  for (const c of corners) {
+    blobs.push({
+      cx: c.x - ox, cy: c.y - oy,
+      rx: 60 + rng() * 120, ry: 50 + rng() * 80,
+      rot: rng() * Math.PI,
+      delay: 0.4 + rng() * 0.3,
+      color: INK_MID,
+      wobbleAmp: 4 + rng() * 6,
+      wobbleFreq: 3 + Math.floor(rng() * 4),
+      wobblePhase: rng() * Math.PI * 2,
+    });
+  }
+
+  let start: number | null = null;
+  let rafId: number;
+  const DURATION = 800; // ms
+
+  function drawBlob(
+    ctx: CanvasRenderingContext2D,
+    x: number, y: number,
+    rx: number, ry: number,
+    rot: number,
+    wobbleAmp: number, wobbleFreq: number, wobblePhase: number,
+    scale: number
+  ) {
+    const steps = 60;
+    ctx.beginPath();
+    for (let i = 0; i <= steps; i++) {
+      const a = (i / steps) * Math.PI * 2;
+      // Organic wobble on the edge
+      const wobble = 1 + Math.sin(a * wobbleFreq + wobblePhase) * (wobbleAmp / 100) * scale;
+      const px = Math.cos(a) * rx * scale * wobble;
+      const py = Math.sin(a) * ry * scale * wobble;
+      // Rotate
+      const rpx = px * Math.cos(rot) - py * Math.sin(rot);
+      const rpy = px * Math.sin(rot) + py * Math.cos(rot);
+      if (i === 0) ctx.moveTo(x + rpx, y + rpy);
+      else ctx.lineTo(x + rpx, y + rpy);
+    }
+    ctx.closePath();
+  }
+
+  function frame(ts: number) {
+    if (!start) start = ts;
+    const elapsed = ts - start;
+    const progress = Math.min(elapsed / DURATION, 1);
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Easing: fast start, gentle settle
+    const ease = 1 - Math.pow(1 - progress, 3);
+
+    for (const blob of blobs) {
+      const blobProgress = Math.max(0, Math.min(1,
+        (ease - blob.delay) / (1 - blob.delay)
+      ));
+      if (blobProgress <= 0) continue;
+
+      const blobEase = 1 - Math.pow(1 - blobProgress, 2.5);
+      const x = ox + blob.cx * blobEase;
+      const y = oy + blob.cy * blobEase;
+
+      ctx.fillStyle = blob.color;
+      drawBlob(
+        ctx, x, y,
+        blob.rx, blob.ry, blob.rot,
+        blob.wobbleAmp, blob.wobbleFreq, blob.wobblePhase,
+        blobEase
+      );
+      ctx.fill();
+    }
+
+    // Final pass: full coverage rectangle fades in at the end
+    if (progress > 0.5) {
+      const coverAlpha = Math.min(1, (progress - 0.5) * 2) * 0.96;
+      ctx.fillStyle = `rgba(18, 4, 36, ${coverAlpha})`;
+      ctx.beginPath();
+      // Rounded rect
+      const r = 10;
+      ctx.moveTo(r, 0);
+      ctx.lineTo(W - r, 0);
+      ctx.quadraticCurveTo(W, 0, W, r);
+      ctx.lineTo(W, H - r);
+      ctx.quadraticCurveTo(W, H, W - r, H);
+      ctx.lineTo(r, H);
+      ctx.quadraticCurveTo(0, H, 0, H - r);
+      ctx.lineTo(0, r);
+      ctx.quadraticCurveTo(0, 0, r, 0);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    if (progress < 1) {
+      rafId = requestAnimationFrame(frame);
+    }
+  }
+
+  rafId = requestAnimationFrame(frame);
+  return () => cancelAnimationFrame(rafId);
+}
+
 /* ── Stream color helper ── */
 function sc(id: string): string {
   return `var(--col-${id})`;
@@ -176,7 +347,10 @@ export default function ReaderPage() {
   const [timeFilter, setTimeFilter] = useState("all");
   const [activeStream, setActiveStream] = useState<string | null>(null);
   const [readSet, setReadSet] = useState<Set<string>>(new Set());
+  const [expandedSet, setExpandedSet] = useState<Set<string>>(new Set());
+  const [collapsingSet, setCollapsingSet] = useState<Set<string>>(new Set());
   const refs = useRef<Record<string, HTMLElement | null>>({});
+  const inkCleanups = useRef<Record<string, (() => void) | undefined>>({});
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -211,6 +385,37 @@ export default function ReaderPage() {
     },
     []
   );
+
+  const toggleExpand = useCallback((id: string) => {
+    setExpandedSet((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        // Collapsing — add to collapsing set for exit animation
+        next.delete(id);
+        setCollapsingSet((cp) => { const n = new Set(cp); n.add(id); return n; });
+        // Clean up ink canvas
+        if (inkCleanups.current[id]) {
+          inkCleanups.current[id]!();
+          delete inkCleanups.current[id];
+        }
+        setTimeout(() => {
+          setCollapsingSet((cp) => { const n = new Set(cp); n.delete(id); return n; });
+        }, 400);
+      } else {
+        next.add(id);
+        // Kick off ink animation after DOM updates
+        requestAnimationFrame(() => {
+          const canvas = document.querySelector(
+            `[data-ink-id="${id}"]`
+          ) as HTMLCanvasElement | null;
+          if (canvas) {
+            inkCleanups.current[id] = animateInkSpill(canvas);
+          }
+        });
+      }
+      return next;
+    });
+  }, []);
 
   const jumpTo = useCallback((id: string) => {
     const el = refs.current[id];
@@ -492,12 +697,26 @@ export default function ReaderPage() {
                     <div key={sec}>
                       <div className={styles.subsectionTitle}>— {sec}</div>
                       <div className={styles.stories}>
-                        {items.map((story) => (
+                        {items.map((story) => {
+                          const isExpanded = expandedSet.has(story.id);
+                          const isCollapsing = collapsingSet.has(story.id);
+                          return (
                           <article
                             key={story.id}
                             ref={(el) => { refs.current[story.id] = el; }}
-                            className={`${styles.story} ${readSet.has(story.id) ? styles.storyRead : ""}`}
+                            className={[
+                              styles.story,
+                              readSet.has(story.id) ? styles.storyRead : "",
+                              isExpanded ? styles.storyExpanded : "",
+                              isCollapsing ? styles.storyCollapsing : "",
+                            ].filter(Boolean).join(" ")}
                             style={{ "--stream-color": sc(s.id) } as React.CSSProperties}
+                            onClick={(e) => {
+                              // Don't toggle if clicking links or buttons
+                              const tag = (e.target as HTMLElement).closest("a, button");
+                              if (tag) return;
+                              toggleExpand(story.id);
+                            }}
                           >
                             <div className={styles.storyMeta}>
                               <span className={styles.readTimeBadge}>
@@ -506,7 +725,7 @@ export default function ReaderPage() {
                               <span className={styles.sectionName}>· {story.section}</span>
                               <button
                                 className={styles.readToggle}
-                                onClick={() => toggleRead(story.id)}
+                                onClick={(e) => { e.stopPropagation(); toggleRead(story.id); }}
                                 title={readSet.has(story.id) ? "Mark unread" : "Mark read"}
                               >
                                 {readSet.has(story.id) && <span className={styles.readCheck}>✓</span>}
@@ -514,25 +733,57 @@ export default function ReaderPage() {
                             </div>
                             <h3 className={styles.storyH3}>{story.title}</h3>
                             <p className={styles.storySummary}>{story.summary}</p>
-                            <div className={styles.take}>
-                              <div className={styles.takeLabel}>
-                                <span className="claude-avatar">C</span>
+
+                            {/* Collapsed teaser */}
+                            {!isExpanded && !isCollapsing && story.take && (
+                              <div className={styles.takeTeaser}>
+                                <span className="claude-avatar" style={{ width: 18, height: 18, fontSize: 10 }}>C</span>
                                 Claude&apos;s take
+                                <span className={styles.teaserArrow}>→</span>
                               </div>
-                              <div className={styles.takeBody}>{story.take}</div>
-                            </div>
-                            <div className={styles.storyFooter}>
-                              {story.url && story.url !== "#" && (
-                                <a href={story.url} target="_blank" rel="noopener noreferrer" className={styles.srcLink}>
-                                  Read source
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                                    <path d="M7 17 17 7M7 7h10v10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                                  </svg>
-                                </a>
-                              )}
-                            </div>
+                            )}
+
+                            {/* Expandable take with ink spill */}
+                            {story.take && (isExpanded || isCollapsing) && (
+                              <>
+                                <div className={styles.takeWrap}>
+                                  <div className={styles.takeInner}>
+                                    <div className={styles.take}>
+                                      <canvas
+                                        className={styles.inkCanvas}
+                                        data-ink-id={story.id}
+                                      />
+                                      <div className={styles.takeContent}>
+                                        <div className={styles.takeLabel}>
+                                          <span className="claude-avatar">C</span>
+                                          Claude&apos;s take
+                                        </div>
+                                        <div className={styles.takeBody}>{story.take}</div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className={styles.storyFooter}>
+                                  {story.url && story.url !== "#" && (
+                                    <a
+                                      href={story.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className={styles.srcLink}
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      Read source
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                        <path d="M7 17 17 7M7 7h10v10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                      </svg>
+                                    </a>
+                                  )}
+                                </div>
+                              </>
+                            )}
                           </article>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   ))}

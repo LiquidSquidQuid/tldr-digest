@@ -298,7 +298,7 @@
   background: var(--surface); border: 1px solid var(--border);
   border-radius: 14px; padding: 22px 24px;
   transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s;
-  position: relative;
+  position: relative; cursor: pointer;
 }
 .story:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
 .storyRead { opacity: 0.62; }
@@ -329,30 +329,114 @@
 }
 @media (max-width: 720px) { .storyH3 { font-size: 20px; } }
 .storySummary {
-  font-size: 15px; line-height: 1.6; color: var(--text-2); margin-bottom: 18px;
+  font-size: 15px; line-height: 1.6; color: var(--text-2); margin-bottom: 0;
 }
+
+/* ── Collapsed take teaser ── */
+.takeTeaser {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 14px; padding-top: 12px;
+  border-top: 1px dashed color-mix(in oklab, var(--border) 60%, transparent);
+  font-family: var(--mono); font-size: 11.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-3); transition: color 0.2s;
+}
+.story:hover .takeTeaser { color: var(--accent); }
+.teaserArrow {
+  transition: transform 0.3s ease;
+}
+.storyExpanded .teaserArrow { transform: rotate(90deg); }
+
+/* ── Ink-spill take reveal ── */
+.takeWrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  margin-top: 0;
+}
+.storyExpanded .takeWrap {
+  grid-template-rows: 1fr;
+  margin-top: 16px;
+}
+.takeInner {
+  overflow: hidden;
+}
+
 .take {
-  position: relative; padding: 18px 20px;
-  background: linear-gradient(135deg, color-mix(in oklab, var(--stream-color) 6%, transparent), transparent 60%), var(--surface-2);
-  border-radius: 8px; border-left: 3px solid var(--stream-color);
+  position: relative; padding: 22px 24px;
+  border-radius: 10px;
+  overflow: hidden;
+  /* starts transparent, ink fills via canvas */
+  background: transparent;
+  border-left: 3px solid transparent;
+  transition: border-color 0.4s 0.3s;
 }
+.storyExpanded .take {
+  border-left-color: color-mix(in oklab, var(--stream-color) 60%, #c4b5fd);
+}
+
+/* ink canvas sits behind text */
+.inkCanvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.takeContent {
+  position: relative; z-index: 1;
+}
+
 .takeLabel {
   display: inline-flex; align-items: center; gap: 8px;
   font-family: var(--mono); font-size: 11px; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.1em;
-  color: var(--stream-color); margin-bottom: 10px;
+  color: #c4b5fd; margin-bottom: 10px;
+  opacity: 0; transform: translateY(8px);
+  transition: opacity 0.4s 0.35s, transform 0.4s 0.35s;
 }
-.takeBody { font-size: 14.5px; line-height: 1.65; color: var(--ink); }
+.storyExpanded .takeLabel {
+  opacity: 1; transform: translateY(0);
+}
+.takeBody {
+  font-size: 14.5px; line-height: 1.65;
+  color: #ede9fe;
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.5s 0.45s, transform 0.5s 0.45s;
+}
+.storyExpanded .takeBody {
+  opacity: 1; transform: translateY(0);
+}
+
+/* collapse transitions */
+.storyCollapsing .takeLabel,
+.storyCollapsing .takeBody {
+  opacity: 0; transform: translateY(6px);
+  transition: opacity 0.2s, transform 0.2s;
+}
+.storyCollapsing .takeWrap {
+  transition: grid-template-rows 0.35s 0.15s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .storyFooter {
   display: flex; align-items: center; gap: 18px;
   margin-top: 16px; font-size: 13px; color: var(--text-3); font-family: var(--mono);
+  opacity: 0; transform: translateY(6px);
+  transition: opacity 0.3s 0.55s, transform 0.3s 0.55s;
+}
+.storyExpanded .storyFooter {
+  opacity: 1; transform: translateY(0);
+}
+.storyCollapsing .storyFooter {
+  opacity: 0; transition: opacity 0.15s, transform 0.15s;
 }
 .srcLink {
   display: inline-flex; align-items: center; gap: 5px;
-  color: var(--accent); font-weight: 500; font-size: 12.5px;
+  color: #c4b5fd; font-weight: 500; font-size: 12.5px;
   transition: color 0.12s;
 }
-.srcLink:hover { color: var(--ink); }
+.srcLink:hover { color: #ede9fe; }
 
 /* ── Empty ── */
 .empty {
