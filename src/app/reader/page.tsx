@@ -195,21 +195,31 @@ const SUPABASE_URL = "https://zuxznsgefrjkxokldoah.supabase.co";
 const ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1eHpuc2dlZnJqa3hva2xkb2FoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MzA1MjIsImV4cCI6MjA5MzQwNjUyMn0.QU4csmfWGbRmCZUbcZWq142x44T1kR7oh-pwo9eMofE";
 
-const STREAMS_MAP: Record<string, { id: string; short: string }> = {
-  TLDR: { id: "tldr", short: "Main" },
-  "TLDR AI": { id: "ai", short: "AI" },
-  "TLDR Dev": { id: "dev", short: "Dev" },
-  "TLDR Information Security": { id: "infosec", short: "InfoSec" },
-  "TLDR IT": { id: "it", short: "IT" },
-  "TLDR Fintech": { id: "fintech", short: "Fintech" },
-  "TLDR Design": { id: "design", short: "Design" },
-  "TLDR Crypto": { id: "crypto", short: "Crypto" },
-  "TLDR Founders": { id: "founders", short: "Founders" },
-  "TLDR Marketing": { id: "marketing", short: "Marketing" },
-  "TLDR DevOps": { id: "devops", short: "DevOps" },
-  "TLDR Data": { id: "data", short: "Data" },
-};
-const STREAM_ORDER = Object.keys(STREAMS_MAP);
+// Canonical stream configs keyed by stable id
+const STREAM_DEFS: { id: string; short: string; aliases: string[] }[] = [
+  { id: "tldr", short: "Main", aliases: ["TLDR", "Main"] },
+  { id: "ai", short: "AI", aliases: ["TLDR AI", "AI"] },
+  { id: "dev", short: "Dev", aliases: ["TLDR Dev", "Dev"] },
+  { id: "infosec", short: "InfoSec", aliases: ["TLDR Information Security", "InfoSec", "Information Security"] },
+  { id: "it", short: "IT", aliases: ["TLDR IT", "IT"] },
+  { id: "fintech", short: "Fintech", aliases: ["TLDR Fintech", "Fintech"] },
+  { id: "design", short: "Design", aliases: ["TLDR Design", "Design"] },
+  { id: "crypto", short: "Crypto", aliases: ["TLDR Crypto", "Crypto"] },
+  { id: "founders", short: "Founders", aliases: ["TLDR Founders", "Founders"] },
+  { id: "marketing", short: "Marketing", aliases: ["TLDR Marketing", "Marketing"] },
+  { id: "devops", short: "DevOps", aliases: ["TLDR DevOps", "DevOps"] },
+  { id: "data", short: "Data", aliases: ["TLDR Data", "Data", "Product"] },
+];
+
+// Build lookup: any alias → stream config (case-insensitive)
+const STREAMS_MAP: Record<string, { id: string; short: string }> = {};
+for (const def of STREAM_DEFS) {
+  for (const alias of def.aliases) {
+    STREAMS_MAP[alias] = { id: def.id, short: def.short };
+    STREAMS_MAP[alias.toLowerCase()] = { id: def.id, short: def.short };
+  }
+}
+const STREAM_ORDER = STREAM_DEFS.map((d) => d.aliases[0]);
 
 function parseReadTime(rt: string | number | undefined): number {
   if (!rt) return 3;
@@ -284,11 +294,13 @@ async function fetchDigest(): Promise<DigestData | null> {
   if (!rows || rows.length === 0) return null;
 
   const digestDate = rows[0].digest_date;
-  rows.sort((a, b) => {
-    const ai = STREAM_ORDER.indexOf(a.stream_name);
-    const bi = STREAM_ORDER.indexOf(b.stream_name);
-    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-  });
+  // Sort by canonical stream order — resolve alias to index
+  const streamIdx = (name: string): number => {
+    const cfg = STREAMS_MAP[name] || STREAMS_MAP[name.toLowerCase()];
+    if (!cfg) return 99;
+    return STREAM_DEFS.findIndex((d) => d.id === cfg.id);
+  };
+  rows.sort((a, b) => streamIdx(a.stream_name) - streamIdx(b.stream_name));
 
   const streams: Stream[] = [];
   const stories: Record<string, Story[]> = {};
@@ -299,7 +311,7 @@ async function fetchDigest(): Promise<DigestData | null> {
   let totalMin = 0;
 
   for (const row of rows) {
-    const cfg = STREAMS_MAP[row.stream_name];
+    const cfg = STREAMS_MAP[row.stream_name] || STREAMS_MAP[row.stream_name.toLowerCase()];
     if (!cfg) continue;
     if (!stories[cfg.id]) {
       streams.push({

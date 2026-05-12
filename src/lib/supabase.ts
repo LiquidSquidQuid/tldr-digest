@@ -9,58 +9,33 @@ const HEADERS = {
   Authorization: `Bearer ${ANON_KEY}`,
 };
 
-// Maps stream_name from Supabase to our internal stream config
-const STREAMS: Record<string, Stream> = {
-  TLDR: { id: "tldr", name: "TLDR", short: "Main", cssVar: "--col-tldr" },
-  "TLDR AI": { id: "ai", name: "TLDR AI", short: "AI", cssVar: "--col-ai" },
-  "TLDR Dev": { id: "dev", name: "TLDR Dev", short: "Dev", cssVar: "--col-dev" },
-  "TLDR Information Security": {
-    id: "infosec",
-    name: "TLDR InfoSec",
-    short: "InfoSec",
-    cssVar: "--col-infosec",
-  },
-  "TLDR IT": { id: "it", name: "TLDR IT", short: "IT", cssVar: "--col-it" },
-  "TLDR Fintech": {
-    id: "fintech",
-    name: "TLDR Fintech",
-    short: "Fintech",
-    cssVar: "--col-fintech",
-  },
-  "TLDR Design": {
-    id: "design",
-    name: "TLDR Design",
-    short: "Design",
-    cssVar: "--col-design",
-  },
-  "TLDR Crypto": {
-    id: "crypto",
-    name: "TLDR Crypto",
-    short: "Crypto",
-    cssVar: "--col-crypto",
-  },
-  "TLDR Founders": {
-    id: "founders",
-    name: "TLDR Founders",
-    short: "Founders",
-    cssVar: "--col-founders",
-  },
-  "TLDR Marketing": {
-    id: "marketing",
-    name: "TLDR Marketing",
-    short: "Marketing",
-    cssVar: "--col-marketing",
-  },
-  "TLDR DevOps": {
-    id: "devops",
-    name: "TLDR DevOps",
-    short: "DevOps",
-    cssVar: "--col-devops",
-  },
-  "TLDR Data": { id: "data", name: "TLDR Data", short: "Data", cssVar: "--col-data" },
-};
+// Canonical stream definitions with all known aliases
+const STREAM_DEFS: { id: string; display: string; short: string; aliases: string[] }[] = [
+  { id: "tldr", display: "Main", short: "Main", aliases: ["TLDR", "Main"] },
+  { id: "ai", display: "AI", short: "AI", aliases: ["TLDR AI", "AI"] },
+  { id: "dev", display: "Dev", short: "Dev", aliases: ["TLDR Dev", "Dev"] },
+  { id: "infosec", display: "InfoSec", short: "InfoSec", aliases: ["TLDR Information Security", "InfoSec", "Information Security"] },
+  { id: "it", display: "IT", short: "IT", aliases: ["TLDR IT", "IT"] },
+  { id: "fintech", display: "Fintech", short: "Fintech", aliases: ["TLDR Fintech", "Fintech"] },
+  { id: "design", display: "Design", short: "Design", aliases: ["TLDR Design", "Design"] },
+  { id: "crypto", display: "Crypto", short: "Crypto", aliases: ["TLDR Crypto", "Crypto"] },
+  { id: "founders", display: "Founders", short: "Founders", aliases: ["TLDR Founders", "Founders"] },
+  { id: "marketing", display: "Marketing", short: "Marketing", aliases: ["TLDR Marketing", "Marketing"] },
+  { id: "devops", display: "DevOps", short: "DevOps", aliases: ["TLDR DevOps", "DevOps"] },
+  { id: "data", display: "Data", short: "Data", aliases: ["TLDR Data", "Data", "Product"] },
+];
 
-const STREAM_ORDER = Object.keys(STREAMS);
+// Build lookup: any alias → Stream (case-insensitive)
+const STREAMS: Record<string, Stream> = {};
+for (const def of STREAM_DEFS) {
+  const stream: Stream = { id: def.id, name: def.display, short: def.short, cssVar: `--col-${def.id}` };
+  for (const alias of def.aliases) {
+    STREAMS[alias] = stream;
+    STREAMS[alias.toLowerCase()] = stream;
+  }
+}
+
+const STREAM_ORDER = STREAM_DEFS.map((d) => d.aliases[0]);
 
 function parseReadTime(rt: string | number | undefined): number {
   if (!rt) return 3;
@@ -113,12 +88,13 @@ export async function fetchDigest(): Promise<DigestData | null> {
   const digestDate = rows[0].digest_date;
   const dayLabel = formatDate(digestDate);
 
-  // Sort by stream order
-  rows.sort((a, b) => {
-    const ai = STREAM_ORDER.indexOf(a.stream_name);
-    const bi = STREAM_ORDER.indexOf(b.stream_name);
-    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-  });
+  // Sort by canonical stream order — resolve alias to index
+  const streamIdx = (name: string): number => {
+    const s = STREAMS[name] || STREAMS[name.toLowerCase()];
+    if (!s) return 99;
+    return STREAM_DEFS.findIndex((d) => d.id === s.id);
+  };
+  rows.sort((a, b) => streamIdx(a.stream_name) - streamIdx(b.stream_name));
 
   const streams: Stream[] = [];
   const stories: Record<string, Story[]> = {};
@@ -129,7 +105,7 @@ export async function fetchDigest(): Promise<DigestData | null> {
   let totalReadMin = 0;
 
   for (const row of rows) {
-    const cfg = STREAMS[row.stream_name];
+    const cfg = STREAMS[row.stream_name] || STREAMS[row.stream_name.toLowerCase()];
     if (!cfg) continue;
 
     if (!stories[cfg.id]) {
