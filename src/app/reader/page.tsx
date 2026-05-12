@@ -5,9 +5,9 @@ import type { DigestData, Story, Stream } from "@/lib/types";
 import styles from "./reader.module.css";
 
 /* ── Procedural ink-spill renderer ──
-   Draws an organic, unique ink blot that expands outward.
-   Uses layered radial blobs with turbulent offsets so every
-   reveal looks like real ink bleeding into paper. */
+   Smooth welling/bleeding effect using layered radial gradients
+   that expand and merge like real ink wicking through paper.
+   Every reveal is unique via randomized tendrils and timing. */
 
 function animateInkSpill(canvas: HTMLCanvasElement): () => void {
   const ctxOrNull = canvas.getContext("2d");
@@ -21,100 +21,64 @@ function animateInkSpill(canvas: HTMLCanvasElement): () => void {
   ctx.scale(dpr, dpr);
   const W = rect.width;
   const H = rect.height;
+  const diag = Math.sqrt(W * W + H * H);
 
-  // Deep dark purple palette
-  const INK_CORE = "rgba(18, 4, 36, 0.95)";    // #120424
-  const INK_MID  = "rgba(26, 10, 46, 0.88)";    // #1a0a2e
-  const INK_EDGE = "rgba(38, 16, 62, 0.72)";    // #26103e
-  const INK_BLEED = "rgba(55, 20, 80, 0.35)";   // bleed fringe
-
-  // Generate random blob field — each blob is an ink droplet
   const rng = () => Math.random();
-  const BLOB_COUNT = 18 + Math.floor(rng() * 12);
-  interface Blob {
-    cx: number; cy: number;       // center relative to origin
-    rx: number; ry: number;       // ellipse radii
-    rot: number;                  // rotation
-    delay: number;                // stagger timing (0–1)
-    color: string;
-    wobbleAmp: number;            // organic edge distortion amplitude
-    wobbleFreq: number;           // distortion frequency
-    wobblePhase: number;          // randomize phase
+
+  // Origin — where the ink wells up from
+  const ox = W * (0.08 + rng() * 0.2);
+  const oy = H * (0.3 + rng() * 0.4);
+
+  // Tendrils: smooth radial-gradient circles that bleed outward
+  // along organic paths. Each tendril is a soft circle that grows
+  // and drifts, creating a smooth smearing effect when they overlap.
+  interface Tendril {
+    angle: number;       // direction from origin
+    speed: number;       // how fast it reaches its target (0–1 multiplier)
+    reach: number;       // max distance from origin
+    width: number;       // radius of the soft gradient circle
+    delay: number;       // when it starts (0–1)
+    drift: number;       // lateral wobble as it extends
+    driftFreq: number;   // wobble frequency
+    alpha: number;       // peak opacity
   }
 
-  // Origin: slightly left of center, vertically centered
-  const ox = W * (0.12 + rng() * 0.15);
-  const oy = H * (0.35 + rng() * 0.3);
+  const TENDRIL_COUNT = 10 + Math.floor(rng() * 6);
+  const tendrils: Tendril[] = [];
 
-  const blobs: Blob[] = [];
-  for (let i = 0; i < BLOB_COUNT; i++) {
-    const t = i / BLOB_COUNT;
-    // Spread outward with some randomness
-    const angle = rng() * Math.PI * 2;
-    const spread = (0.15 + t * 0.85) * Math.max(W, H) * (0.5 + rng() * 0.4);
-    const colors = [INK_CORE, INK_CORE, INK_MID, INK_MID, INK_EDGE, INK_BLEED];
-    blobs.push({
-      cx: Math.cos(angle) * spread * (0.6 + rng() * 0.8),
-      cy: Math.sin(angle) * spread * (0.3 + rng() * 0.5),
-      rx: (30 + rng() * 90) * (1 + t * 1.5),
-      ry: (20 + rng() * 60) * (1 + t * 1.2),
-      rot: rng() * Math.PI,
-      delay: t * 0.6 + rng() * 0.15,
-      color: colors[Math.floor(rng() * colors.length)],
-      wobbleAmp: 3 + rng() * 8,
-      wobbleFreq: 3 + Math.floor(rng() * 5),
-      wobblePhase: rng() * Math.PI * 2,
+  // Main spread tendrils — cover the full area
+  for (let i = 0; i < TENDRIL_COUNT; i++) {
+    const angle = (i / TENDRIL_COUNT) * Math.PI * 2 + (rng() - 0.5) * 0.6;
+    tendrils.push({
+      angle,
+      speed: 0.6 + rng() * 0.4,
+      reach: diag * (0.5 + rng() * 0.5),
+      width: 80 + rng() * 180,
+      delay: (i / TENDRIL_COUNT) * 0.25 + rng() * 0.1,
+      drift: 20 + rng() * 40,
+      driftFreq: 1 + rng() * 2,
+      alpha: 0.25 + rng() * 0.15,
     });
   }
 
-  // Add extra coverage blobs to fill corners
-  const corners = [
-    { x: 0, y: 0 }, { x: W, y: 0 },
-    { x: 0, y: H }, { x: W, y: H },
-    { x: W * 0.5, y: 0 }, { x: W * 0.5, y: H },
-    { x: W, y: H * 0.5 },
-  ];
-  for (const c of corners) {
-    blobs.push({
-      cx: c.x - ox, cy: c.y - oy,
-      rx: 60 + rng() * 120, ry: 50 + rng() * 80,
-      rot: rng() * Math.PI,
-      delay: 0.4 + rng() * 0.3,
-      color: INK_MID,
-      wobbleAmp: 4 + rng() * 6,
-      wobbleFreq: 3 + Math.floor(rng() * 4),
-      wobblePhase: rng() * Math.PI * 2,
+  // Extra fill tendrils — wider, slower, ensure full coverage
+  for (let i = 0; i < 6; i++) {
+    const angle = rng() * Math.PI * 2;
+    tendrils.push({
+      angle,
+      speed: 0.4 + rng() * 0.3,
+      reach: diag * 0.8,
+      width: 150 + rng() * 250,
+      delay: 0.05 + rng() * 0.2,
+      drift: 10 + rng() * 20,
+      driftFreq: 0.5 + rng(),
+      alpha: 0.18 + rng() * 0.12,
     });
   }
 
   let start: number | null = null;
   let rafId: number;
-  const DURATION = 800; // ms
-
-  function drawBlob(
-    ctx: CanvasRenderingContext2D,
-    x: number, y: number,
-    rx: number, ry: number,
-    rot: number,
-    wobbleAmp: number, wobbleFreq: number, wobblePhase: number,
-    scale: number
-  ) {
-    const steps = 60;
-    ctx.beginPath();
-    for (let i = 0; i <= steps; i++) {
-      const a = (i / steps) * Math.PI * 2;
-      // Organic wobble on the edge
-      const wobble = 1 + Math.sin(a * wobbleFreq + wobblePhase) * (wobbleAmp / 100) * scale;
-      const px = Math.cos(a) * rx * scale * wobble;
-      const py = Math.sin(a) * ry * scale * wobble;
-      // Rotate
-      const rpx = px * Math.cos(rot) - py * Math.sin(rot);
-      const rpy = px * Math.sin(rot) + py * Math.cos(rot);
-      if (i === 0) ctx.moveTo(x + rpx, y + rpy);
-      else ctx.lineTo(x + rpx, y + rpy);
-    }
-    ctx.closePath();
-  }
+  const DURATION = 1000;
 
   function frame(ts: number) {
     if (!start) start = ts;
@@ -123,47 +87,93 @@ function animateInkSpill(canvas: HTMLCanvasElement): () => void {
 
     ctx.clearRect(0, 0, W, H);
 
-    // Easing: fast start, gentle settle
-    const ease = 1 - Math.pow(1 - progress, 3);
+    // Global easing — smooth deceleration
+    const ease = 1 - Math.pow(1 - progress, 2.8);
 
-    for (const blob of blobs) {
-      const blobProgress = Math.max(0, Math.min(1,
-        (ease - blob.delay) / (1 - blob.delay)
-      ));
-      if (blobProgress <= 0) continue;
-
-      const blobEase = 1 - Math.pow(1 - blobProgress, 2.5);
-      const x = ox + blob.cx * blobEase;
-      const y = oy + blob.cy * blobEase;
-
-      ctx.fillStyle = blob.color;
-      drawBlob(
-        ctx, x, y,
-        blob.rx, blob.ry, blob.rot,
-        blob.wobbleAmp, blob.wobbleFreq, blob.wobblePhase,
-        blobEase
-      );
-      ctx.fill();
+    // Layer 1: Central well — a large soft gradient expanding from origin
+    const coreRadius = ease * diag * 0.7;
+    if (coreRadius > 0) {
+      const coreGrad = ctx.createRadialGradient(ox, oy, 0, ox, oy, coreRadius);
+      const coreAlpha = Math.min(0.92, ease * 1.1);
+      coreGrad.addColorStop(0, `rgba(18, 4, 36, ${coreAlpha})`);
+      coreGrad.addColorStop(0.4, `rgba(22, 8, 42, ${coreAlpha * 0.85})`);
+      coreGrad.addColorStop(0.7, `rgba(30, 12, 52, ${coreAlpha * 0.5})`);
+      coreGrad.addColorStop(1, `rgba(38, 16, 62, 0)`);
+      ctx.fillStyle = coreGrad;
+      ctx.fillRect(0, 0, W, H);
     }
 
-    // Final pass: full coverage rectangle fades in at the end
-    if (progress > 0.5) {
-      const coverAlpha = Math.min(1, (progress - 0.5) * 2) * 0.96;
-      ctx.fillStyle = `rgba(18, 4, 36, ${coverAlpha})`;
-      ctx.beginPath();
-      // Rounded rect
-      const r = 10;
-      ctx.moveTo(r, 0);
-      ctx.lineTo(W - r, 0);
-      ctx.quadraticCurveTo(W, 0, W, r);
-      ctx.lineTo(W, H - r);
-      ctx.quadraticCurveTo(W, H, W - r, H);
-      ctx.lineTo(r, H);
-      ctx.quadraticCurveTo(0, H, 0, H - r);
-      ctx.lineTo(0, r);
-      ctx.quadraticCurveTo(0, 0, r, 0);
-      ctx.closePath();
-      ctx.fill();
+    // Layer 2: Tendrils — each is a soft radial gradient that travels
+    // outward from origin along its angle, creating smooth bleeding fingers
+    for (const t of tendrils) {
+      const tProgress = Math.max(0, Math.min(1,
+        (ease - t.delay) / (1 - t.delay)
+      ));
+      if (tProgress <= 0) continue;
+
+      // Smooth ease per tendril
+      const tEase = 1 - Math.pow(1 - tProgress, 2.2);
+      const dist = tEase * t.reach * t.speed;
+
+      // Lateral drift for organic wobble
+      const lateralOffset = Math.sin(tEase * Math.PI * t.driftFreq) * t.drift * tEase;
+      const perpAngle = t.angle + Math.PI / 2;
+
+      const cx = ox + Math.cos(t.angle) * dist + Math.cos(perpAngle) * lateralOffset;
+      const cy = oy + Math.sin(t.angle) * dist + Math.sin(perpAngle) * lateralOffset;
+
+      // Radius grows as it extends
+      const r = t.width * (0.5 + tEase * 0.8);
+      if (r <= 0) continue;
+
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      const a = t.alpha * tEase;
+      grad.addColorStop(0, `rgba(18, 4, 36, ${a})`);
+      grad.addColorStop(0.35, `rgba(22, 8, 42, ${a * 0.8})`);
+      grad.addColorStop(0.65, `rgba(30, 12, 52, ${a * 0.4})`);
+      grad.addColorStop(1, `rgba(38, 16, 62, 0)`);
+
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // Layer 3: Secondary wells — ink pools that bloom at random points
+    // These add organic variation to the density
+    const wellCount = 4;
+    for (let i = 0; i < wellCount; i++) {
+      // Each well blooms at a staggered time
+      const wellDelay = 0.1 + (i / wellCount) * 0.3;
+      const wProgress = Math.max(0, Math.min(1,
+        (ease - wellDelay) / (1 - wellDelay)
+      ));
+      if (wProgress <= 0) continue;
+
+      const wEase = 1 - Math.pow(1 - wProgress, 3);
+      // Position wells along the spread direction with randomized offsets
+      // Use deterministic-ish placement based on index (seeded by initial rng calls)
+      const wAngle = (i * 1.8 + 0.5) + ox * 0.001;
+      const wDist = diag * (0.2 + i * 0.15);
+      const wx = ox + Math.cos(wAngle) * wDist * wEase;
+      const wy = oy + Math.sin(wAngle) * wDist * wEase;
+      const wr = (100 + i * 60) * wEase;
+
+      const wGrad = ctx.createRadialGradient(wx, wy, 0, wx, wy, wr);
+      const wa = 0.3 * wEase;
+      wGrad.addColorStop(0, `rgba(18, 4, 36, ${wa})`);
+      wGrad.addColorStop(0.5, `rgba(24, 8, 44, ${wa * 0.6})`);
+      wGrad.addColorStop(1, `rgba(34, 14, 56, 0)`);
+      ctx.fillStyle = wGrad;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // Layer 4: Final saturation — as the ink settles, the whole area
+    // deepens smoothly. This ensures full coverage without hard edges.
+    if (progress > 0.3) {
+      const settleT = (progress - 0.3) / 0.7;
+      const settleEase = 1 - Math.pow(1 - settleT, 3);
+      const settleAlpha = settleEase * 0.88;
+      ctx.fillStyle = `rgba(18, 4, 36, ${settleAlpha})`;
+      ctx.fillRect(0, 0, W, H);
     }
 
     if (progress < 1) {
