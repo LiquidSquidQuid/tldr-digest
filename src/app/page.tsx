@@ -54,9 +54,10 @@ export default async function Landing() {
               You&apos;re not behind — you&apos;re <strong>buried.</strong>
             </p>
             <p className={styles.heroLede2}>
-              So we built something. Every morning, Claude inhales a dozen+
-              newsletters — TLDR, Morning Brew, The Hustle, Hacker News, Ben&apos;s
-              Bites, and more — <strong>{storyCount || "100+"} stories</strong> across{" "}
+              So we built something. Every morning, Claude inhales eight
+              sources — TLDR, Morning Brew, The Hustle, Hacker News Digest,
+              Stratechery, The Pragmatic Engineer, ByteByteGo, and Ben&apos;s
+              Bites — <strong>{storyCount || "100+"} stories</strong> across{" "}
               <strong>{streamCount || "12"} topics</strong> — and exhales a single
               brief with a take on what actually matters. The whole thing
               takes <strong>five minutes.</strong>
@@ -105,11 +106,12 @@ export default async function Landing() {
               <div className={styles.howStep}>01</div>
               <h3 className={styles.howH3}>Inhale</h3>
               <p className={styles.howP}>
-                Every morning, Claude pulls a dozen+ newsletters —
-                TLDR, Morning Brew, The Hustle, HN Digest, Ben&apos;s Bites, and more.
-                Hundreds of stories, parsed and structured before you wake up.
+                Every morning, Claude pulls eight sources —
+                TLDR, Morning Brew, Stratechery, The Pragmatic Engineer,
+                ByteByteGo, HN Digest, Ben&apos;s Bites, and The Hustle.
+                Parsed and structured before you wake up.
               </p>
-              <div className={styles.howKw}>gmail · parse · 12+ sources</div>
+              <div className={styles.howKw}>gmail · parse · 8 sources</div>
             </div>
             <div className={styles.howCard}>
               <div className={styles.howStep}>02</div>
