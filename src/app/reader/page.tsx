@@ -78,7 +78,7 @@ function animateInkSpill(canvas: HTMLCanvasElement): () => void {
 
   let start: number | null = null;
   let rafId: number;
-  const DURATION = 1000;
+  const DURATION = 1600;
 
   function frame(ts: number) {
     if (!start) start = ts;
@@ -95,10 +95,10 @@ function animateInkSpill(canvas: HTMLCanvasElement): () => void {
     if (coreRadius > 0) {
       const coreGrad = ctx.createRadialGradient(ox, oy, 0, ox, oy, coreRadius);
       const coreAlpha = Math.min(0.92, ease * 1.1);
-      coreGrad.addColorStop(0, `rgba(18, 4, 36, ${coreAlpha})`);
-      coreGrad.addColorStop(0.4, `rgba(22, 8, 42, ${coreAlpha * 0.85})`);
-      coreGrad.addColorStop(0.7, `rgba(30, 12, 52, ${coreAlpha * 0.5})`);
-      coreGrad.addColorStop(1, `rgba(38, 16, 62, 0)`);
+      coreGrad.addColorStop(0, `rgba(30, 15, 105, ${coreAlpha})`);
+      coreGrad.addColorStop(0.4, `rgba(62, 22, 100, ${coreAlpha * 0.85})`);
+      coreGrad.addColorStop(0.7, `rgba(115, 38, 90, ${coreAlpha * 0.5})`);
+      coreGrad.addColorStop(1, `rgba(165, 55, 70, 0)`);
       ctx.fillStyle = coreGrad;
       ctx.fillRect(0, 0, W, H);
     }
@@ -128,10 +128,10 @@ function animateInkSpill(canvas: HTMLCanvasElement): () => void {
 
       const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
       const a = t.alpha * tEase;
-      grad.addColorStop(0, `rgba(18, 4, 36, ${a})`);
-      grad.addColorStop(0.35, `rgba(22, 8, 42, ${a * 0.8})`);
-      grad.addColorStop(0.65, `rgba(30, 12, 52, ${a * 0.4})`);
-      grad.addColorStop(1, `rgba(38, 16, 62, 0)`);
+      grad.addColorStop(0, `rgba(45, 18, 110, ${a})`);
+      grad.addColorStop(0.35, `rgba(80, 28, 98, ${a * 0.8})`);
+      grad.addColorStop(0.65, `rgba(130, 42, 82, ${a * 0.4})`);
+      grad.addColorStop(1, `rgba(170, 58, 65, 0)`);
 
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, W, H);
@@ -159,9 +159,9 @@ function animateInkSpill(canvas: HTMLCanvasElement): () => void {
 
       const wGrad = ctx.createRadialGradient(wx, wy, 0, wx, wy, wr);
       const wa = 0.3 * wEase;
-      wGrad.addColorStop(0, `rgba(18, 4, 36, ${wa})`);
-      wGrad.addColorStop(0.5, `rgba(24, 8, 44, ${wa * 0.6})`);
-      wGrad.addColorStop(1, `rgba(34, 14, 56, 0)`);
+      wGrad.addColorStop(0, `rgba(38, 16, 108, ${wa})`);
+      wGrad.addColorStop(0.5, `rgba(75, 25, 95, ${wa * 0.6})`);
+      wGrad.addColorStop(1, `rgba(140, 45, 80, 0)`);
       ctx.fillStyle = wGrad;
       ctx.fillRect(0, 0, W, H);
     }
@@ -172,7 +172,7 @@ function animateInkSpill(canvas: HTMLCanvasElement): () => void {
       const settleT = (progress - 0.3) / 0.7;
       const settleEase = 1 - Math.pow(1 - settleT, 3);
       const settleAlpha = settleEase * 0.88;
-      ctx.fillStyle = `rgba(18, 4, 36, ${settleAlpha})`;
+      ctx.fillStyle = `rgba(28, 14, 95, ${settleAlpha})`;
       ctx.fillRect(0, 0, W, H);
     }
 

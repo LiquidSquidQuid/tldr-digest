@@ -372,7 +372,7 @@
   transition: border-color 0.4s 0.3s;
 }
 .storyExpanded .take {
-  border-left-color: color-mix(in oklab, var(--stream-color) 60%, #c4b5fd);
+  border-left-color: color-mix(in oklab, var(--stream-color) 60%, #e0b0ff);
 }
 
 /* ink canvas sits behind text */
@@ -392,7 +392,7 @@
   display: inline-flex; align-items: center; gap: 8px;
   font-family: var(--mono); font-size: 11px; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.1em;
-  color: #c4b5fd; margin-bottom: 10px;
+  color: #f0d0ff; margin-bottom: 10px;
   opacity: 0; transform: translateY(8px);
   transition: opacity 0.4s 0.35s, transform 0.4s 0.35s;
 }
@@ -433,7 +433,7 @@
 }
 .srcLink {
   display: inline-flex; align-items: center; gap: 5px;
-  color: #c4b5fd; font-weight: 500; font-size: 12.5px;
+  color: #f0d0ff; font-weight: 500; font-size: 12.5px;
   transition: color 0.12s;
 }
 .srcLink:hover { color: #ede9fe; }
