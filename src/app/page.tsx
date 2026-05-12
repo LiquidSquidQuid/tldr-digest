@@ -54,9 +54,10 @@ export default async function Landing() {
               You&apos;re not behind — you&apos;re <strong>buried.</strong>
             </p>
             <p className={styles.heroLede2}>
-              So we built something. Every morning, Claude inhales the entire
-              TLDR network — <strong>{storyCount || "100+"} stories</strong> across{" "}
-              <strong>{streamCount || "12"} streams</strong> — and exhales a single
+              So we built something. Every morning, Claude inhales a dozen+
+              newsletters — TLDR, Morning Brew, The Hustle, Hacker News, Ben&apos;s
+              Bites, and more — <strong>{storyCount || "100+"} stories</strong> across{" "}
+              <strong>{streamCount || "12"} topics</strong> — and exhales a single
               brief with a take on what actually matters. The whole thing
               takes <strong>five minutes.</strong>
             </p>
@@ -104,11 +105,11 @@ export default async function Landing() {
               <div className={styles.howStep}>01</div>
               <h3 className={styles.howH3}>Inhale</h3>
               <p className={styles.howP}>
-                Every morning, Claude pulls the full TLDR network —
-                AI, Dev, Security, Fintech, Design, and seven more streams.
+                Every morning, Claude pulls a dozen+ newsletters —
+                TLDR, Morning Brew, The Hustle, HN Digest, Ben&apos;s Bites, and more.
                 Hundreds of stories, parsed and structured before you wake up.
               </p>
-              <div className={styles.howKw}>gmail · parse · 12 streams</div>
+              <div className={styles.howKw}>gmail · parse · 12+ sources</div>
             </div>
             <div className={styles.howCard}>
               <div className={styles.howStep}>02</div>
@@ -173,7 +174,7 @@ export default async function Landing() {
             Every corner<br/>of <em>tech.</em>
           </h2>
           <p className={styles.lede}>
-            {streamCount} streams. {storyCount || "100+"} stories today. All distilled into one reader.
+            {streamCount} topics across a dozen+ sources. {storyCount || "100+"} stories today — all distilled into one reader.
           </p>
           <div className={styles.streamsGrid}>
             {streamStats.map((s) => (
