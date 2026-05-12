@@ -146,6 +146,7 @@
   background: linear-gradient(135deg, var(--accent-tint), var(--surface-2));
   border: 1px solid var(--border); border-radius: 14px;
   padding: 24px; position: relative; overflow: hidden; margin-bottom: 36px;
+  scroll-margin-top: 72px;
 }
 .picks::before {
   content: ""; position: absolute; top: -100px; right: -100px;
