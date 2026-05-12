@@ -49,7 +49,7 @@ export default async function Landing() {
               <span className={styles.row}><em className={styles.heroEm}>time.</em></span>
             </h1>
             <p className={styles.heroLede}>
-              Twelve newsletters land before your first coffee.
+              A wall of newsletters lands before your first coffee.
               By the third one covering the same story, you&apos;re skimming.
               You&apos;re not behind — you&apos;re <strong>buried.</strong>
             </p>
