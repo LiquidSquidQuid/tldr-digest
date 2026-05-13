@@ -110,6 +110,10 @@
   font-size: 12px; color: var(--text-3); text-transform: uppercase;
   letter-spacing: 0.06em; margin-top: 6px; font-weight: 500;
 }
+@media (max-width: 720px) {
+  .heroStatV { font-size: 24px; }
+  .heroStats { gap: 18px; }
+}
 .heroStatSlash {
   font-family: var(--sans); font-size: 18px; color: var(--text-3);
   margin: 0 2px; font-weight: 300;
@@ -390,6 +394,12 @@
   font-family: var(--display); font-size: 26px; font-weight: 500;
   letter-spacing: -0.01em;
 }
+@media (max-width: 720px) {
+  .streamHead { flex-wrap: wrap; gap: 6px 12px; top: 56px; }
+  .streamH2 { font-size: 20px; }
+  .feedHeadL { font-size: 20px; }
+  .feedHead { flex-wrap: wrap; gap: 8px; }
+}
 .streamHeadCount {
   font-family: var(--mono); color: var(--text-3); font-size: 12.5px; margin-left: auto;
 }
@@ -408,6 +418,16 @@
   transition: border-color 0.2s, box-shadow 0.25s ease, transform 0.2s ease,
               opacity 0.5s ease, padding 0.5s ease;
   position: relative; cursor: pointer;
+  overflow: hidden; max-width: 100%; box-sizing: border-box;
+  word-wrap: break-word; overflow-wrap: break-word;
+}
+@media (max-width: 720px) {
+  .story { padding: 16px 16px; border-radius: 10px; }
+  .storyRead { padding: 10px 14px; }
+}
+@media (max-width: 480px) {
+  .story { padding: 14px 12px; border-radius: 8px; }
+  .storyRead { padding: 8px 12px; }
 }
 .story:hover {
   border-color: color-mix(in oklab, var(--accent-2) 50%, var(--border-strong));
