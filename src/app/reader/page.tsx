@@ -752,6 +752,9 @@ export default function ReaderPage() {
                       {stream?.short || p.streamId}
                     </div>
                     <h3 className={styles.pickH3}>{p.title}</h3>
+                    {p.summary && (
+                      <p className={styles.pickSummary}>{p.summary}</p>
+                    )}
                     <div className={styles.pickFooter}>
                       <span>
                         {String(i + 1).padStart(2, "0")} / {String(data.topPicks.length).padStart(2, "0")}
