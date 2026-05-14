@@ -41,7 +41,11 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <div id="app-wrap" style={{ width: "100%", maxWidth: "100%", overflowX: "hidden" as const }}>
+          {children}
+        </div>
+      </body>
     </html>
   );
 }
