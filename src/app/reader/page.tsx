@@ -433,6 +433,9 @@ export default function ReaderPage() {
   const feedRef = useRef<HTMLElement>(null);
   const picksRef = useRef<HTMLElement>(null);
   const [picksPastView, setPicksPastView] = useState(false);
+  // On-demand Claude takes: storyId → take text (or "loading" sentinel)
+  const [takesMap, setTakesMap] = useState<Record<string, string>>({});
+  const takesInFlight = useRef<Set<string>>(new Set());
 
   // Store digest date for remote sync calls
   const digestDateRef = useRef<string>("");
@@ -581,6 +584,45 @@ export default function ReaderPage() {
     []
   );
 
+  // Fetch a Claude take on demand (or use pre-generated/cached one)
+  const fetchTake = useCallback(
+    (story: Story) => {
+      const id = story.id;
+      // Already have it (pre-generated from scheduled task or previously fetched)
+      if (story.take || takesMap[id]) return;
+      // Already in flight
+      if (takesInFlight.current.has(id)) return;
+
+      takesInFlight.current.add(id);
+      setTakesMap((prev) => ({ ...prev, [id]: "__loading__" }));
+
+      fetch("/api/take", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          storyId: id,
+          title: story.title,
+          summary: story.summary,
+          streamId: story.streamId,
+          section: story.section,
+          url: story.url,
+          digestDate: digestDateRef.current,
+        }),
+      })
+        .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
+        .then((data: { take: string }) => {
+          setTakesMap((prev) => ({ ...prev, [id]: data.take }));
+        })
+        .catch(() => {
+          setTakesMap((prev) => ({ ...prev, [id]: "__error__" }));
+        })
+        .finally(() => {
+          takesInFlight.current.delete(id);
+        });
+    },
+    [takesMap]
+  );
+
   const toggleExpand = useCallback((id: string) => {
     setExpandedSet((prev) => {
       const next = new Set(prev);
@@ -598,6 +640,10 @@ export default function ReaderPage() {
         }, 400);
       } else {
         next.add(id);
+        // Trigger on-demand take fetch if needed
+        if (data?.storyById[id]) {
+          fetchTake(data.storyById[id]);
+        }
         // Kick off ink animation after DOM updates
         requestAnimationFrame(() => {
           const canvas = document.querySelector(
@@ -610,7 +656,7 @@ export default function ReaderPage() {
       }
       return next;
     });
-  }, []);
+  }, [data, fetchTake]);
 
   const jumpTo = useCallback((id: string) => {
     const el = refs.current[id];
@@ -1037,8 +1083,8 @@ export default function ReaderPage() {
                               </div>
                             )}
 
-                            {/* Collapsed teaser */}
-                            {!isExpanded && !isCollapsing && story.take && (
+                            {/* Collapsed teaser — always show */}
+                            {!isExpanded && !isCollapsing && (
                               <div className={styles.takeTeaser}>
                                 <span className="claude-avatar" style={{ width: 18, height: 18, fontSize: 10 }}>C</span>
                                 Claude&apos;s take
@@ -1047,7 +1093,11 @@ export default function ReaderPage() {
                             )}
 
                             {/* Expandable take with ink spill */}
-                            {story.take && (isExpanded || isCollapsing) && (
+                            {(isExpanded || isCollapsing) && (() => {
+                              const resolvedTake = story.take || takesMap[story.id] || "";
+                              const isLoading = resolvedTake === "__loading__";
+                              const isError = resolvedTake === "__error__";
+                              return (
                               <>
                                 <div className={styles.takeWrap}>
                                   <div className={styles.takeInner}>
@@ -1061,7 +1111,21 @@ export default function ReaderPage() {
                                           <span className="claude-avatar">C</span>
                                           Claude&apos;s take
                                         </div>
-                                        <div className={styles.takeBody}>{story.take}</div>
+                                        {isLoading && (
+                                          <div className={styles.takeLoading}>
+                                            <span className={styles.takeLoadingDot} />
+                                            <span className={styles.takeLoadingDot} />
+                                            <span className={styles.takeLoadingDot} />
+                                          </div>
+                                        )}
+                                        {isError && (
+                                          <div className={styles.takeBody} style={{ opacity: 0.5 }}>
+                                            Couldn&apos;t generate a take right now. Try again later.
+                                          </div>
+                                        )}
+                                        {!isLoading && !isError && resolvedTake && (
+                                          <div className={styles.takeBody}>{resolvedTake}</div>
+                                        )}
                                       </div>
                                     </div>
                                   </div>
@@ -1083,7 +1147,8 @@ export default function ReaderPage() {
                                   )}
                                 </div>
                               </>
-                            )}
+                              );
+                            })()}
                           </article>
                           );
                         })}
