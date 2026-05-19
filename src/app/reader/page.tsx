@@ -423,6 +423,7 @@ export default function ReaderPage() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [timeFilter, setTimeFilter] = useState("all");
+  const [hideRead, setHideRead] = useState(true);
   const [activeStream, setActiveStream] = useState<string | null>(null);
   const [readSet, setReadSet] = useState<Set<string>>(new Set());
   const [expandedSet, setExpandedSet] = useState<Set<string>>(new Set());
@@ -676,13 +677,14 @@ export default function ReaderPage() {
     const maxT = timeFilter === "all" ? Infinity : parseInt(timeFilter, 10);
     for (const s of data.streams) {
       out[s.id] = (data.stories[s.id] || []).filter((st) => {
+        if (hideRead && readSet.has(st.id)) return false;
         if (st.readTime > maxT) return false;
         if (!qq) return true;
         return `${st.title} ${st.summary} ${st.take}`.toLowerCase().includes(qq);
       });
     }
     return out;
-  }, [data, q, timeFilter]);
+  }, [data, q, timeFilter, hideRead, readSet]);
 
   const counts = useMemo(() => {
     const out: Record<string, number> = {};
@@ -978,6 +980,12 @@ export default function ReaderPage() {
                   {totalVisible} {totalVisible === 1 ? "story" : "stories"}
                 </span>
                 <div className={styles.filterChips}>
+                  <button
+                    className={`${styles.chip} ${hideRead ? styles.chipOn : ""}`}
+                    onClick={() => setHideRead((h) => !h)}
+                  >
+                    {hideRead ? "read hidden" : "show all"}
+                  </button>
                   {[
                     ["all", "all"],
                     ["2", "≤2m"],
