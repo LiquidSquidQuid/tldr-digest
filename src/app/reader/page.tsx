@@ -237,6 +237,19 @@ function formatDate(dateStr: string): string {
   });
 }
 
+/* ── Content-derived stable story ID ──
+   Hash based on title + streamId + date so the same story
+   always gets the same ID regardless of row ordering.
+   Uses a fast djb2-style hash → hex string. */
+function stableStoryId(title: string, streamId: string, date: string): string {
+  const input = `${streamId}::${date}::${title}`;
+  let h = 5381;
+  for (let i = 0; i < input.length; i++) {
+    h = ((h << 5) + h + input.charCodeAt(i)) >>> 0;
+  }
+  return `d-${streamId}-${h.toString(16)}`;
+}
+
 const READ_KEY = "dispatch:read";
 
 function getReadSet(): Set<string> {
@@ -251,6 +264,49 @@ function saveReadSet(s: Set<string>): void {
   try {
     localStorage.setItem(READ_KEY, JSON.stringify([...s]));
   } catch { /* noop */ }
+}
+
+/* ── Supabase read-mark sync ──
+   Supabase is source of truth; localStorage is a fast cache.
+   On load: fetch remote marks, merge with local, push any local-only marks up.
+   On toggle: optimistic local update + async remote upsert/delete. */
+
+async function fetchRemoteReadMarks(): Promise<Set<string>> {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/read_marks?select=id`,
+      { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } }
+    );
+    if (!res.ok) return new Set();
+    const rows: { id: string }[] = await res.json();
+    return new Set(rows.map((r) => r.id));
+  } catch {
+    return new Set();
+  }
+}
+
+async function addRemoteReadMark(id: string, digestDate: string): Promise<void> {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/read_marks`, {
+      method: "POST",
+      headers: {
+        apikey: ANON_KEY,
+        Authorization: `Bearer ${ANON_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates",
+      },
+      body: JSON.stringify({ id, digest_date: digestDate }),
+    });
+  } catch { /* silent — localStorage is cache */ }
+}
+
+async function removeRemoteReadMark(id: string): Promise<void> {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/read_marks?id=eq.${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` },
+    });
+  } catch { /* silent */ }
 }
 
 interface RawRow {
@@ -324,7 +380,7 @@ async function fetchDigest(): Promise<DigestData | null> {
     }
     for (const raw of row.stories || []) {
       const readTime = parseReadTime(raw.read_time);
-      const id = `s-${cfg.id}-${total}`;
+      const id = stableStoryId(raw.title || "", cfg.id, digestDate);
       const story: Story = {
         id,
         streamId: cfg.id,
@@ -378,11 +434,38 @@ export default function ReaderPage() {
   const picksRef = useRef<HTMLElement>(null);
   const [picksPastView, setPicksPastView] = useState(false);
 
+  // Store digest date for remote sync calls
+  const digestDateRef = useRef<string>("");
+
   useEffect(() => {
-    setReadSet(getReadSet());
-    fetchDigest().then((d) => {
+    // Load local cache immediately for fast paint
+    const localMarks = getReadSet();
+    setReadSet(localMarks);
+
+    fetchDigest().then(async (d) => {
       setData(d);
+      if (d) digestDateRef.current = d.date;
       setLoading(false);
+
+      if (!d) return;
+
+      // Merge remote marks with local cache
+      const remoteMarks = await fetchRemoteReadMarks();
+      const validIds = new Set(d.allStories.map((s) => s.id));
+
+      // Union: local + remote (filtered to valid story IDs)
+      const merged = new Set<string>();
+      for (const id of localMarks) if (validIds.has(id)) merged.add(id);
+      for (const id of remoteMarks) if (validIds.has(id)) merged.add(id);
+
+      // Push any local-only marks to remote
+      const localOnly = [...merged].filter((id) => !remoteMarks.has(id));
+      for (const id of localOnly) {
+        addRemoteReadMark(id, d.date);
+      }
+
+      saveReadSet(merged);
+      setReadSet(merged);
     });
   }, []);
 
@@ -469,8 +552,12 @@ export default function ReaderPage() {
         const next = new Set(prev);
         if (next.has(id)) {
           next.delete(id);
+          // Sync removal to Supabase
+          removeRemoteReadMark(id);
         } else {
           next.add(id);
+          // Sync addition to Supabase
+          addRemoteReadMark(id, digestDateRef.current);
           // Collapse Claude's take if it's currently expanded
           setExpandedSet((ep) => {
             if (!ep.has(id)) return ep;
