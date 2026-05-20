@@ -461,6 +461,51 @@
   opacity: 0.4;
   padding: 10px 18px;
 }
+
+/* Brief accent glow pulse when first marked read */
+.storyConsumed {
+  animation: consumedPulse 0.6s ease-out;
+}
+@keyframes consumedPulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 50%, transparent);
+  }
+  40% {
+    box-shadow: 0 0 16px 4px color-mix(in oklab, var(--accent) 35%, transparent),
+                0 0 0 2px color-mix(in oklab, var(--accent) 25%, transparent);
+  }
+  100% {
+    box-shadow: none;
+  }
+}
+
+/* Fold-away departure when hide-read removes the card */
+.storyDeparting {
+  animation: foldAway 0.7s 0.2s cubic-bezier(0.55, 0, 0.67, 0.14) forwards;
+  transform-origin: top center;
+  pointer-events: none;
+}
+@keyframes foldAway {
+  0% {
+    transform: scaleY(1) perspective(600px) rotateX(0deg);
+    opacity: 0.4;
+    max-height: 200px;
+  }
+  50% {
+    transform: scaleY(0.6) perspective(600px) rotateX(-8deg);
+    opacity: 0.2;
+  }
+  100% {
+    transform: scaleY(0) perspective(600px) rotateX(-15deg);
+    opacity: 0;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    border-width: 0;
+  }
+}
 /* Smooth collapse for hidden children */
 .storyRead .storySummary,
 .storyRead .takeTeaser,

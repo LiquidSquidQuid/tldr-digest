@@ -428,6 +428,8 @@ export default function ReaderPage() {
   const [readSet, setReadSet] = useState<Set<string>>(new Set());
   const [expandedSet, setExpandedSet] = useState<Set<string>>(new Set());
   const [collapsingSet, setCollapsingSet] = useState<Set<string>>(new Set());
+  const [departingSet, setDepartingSet] = useState<Set<string>>(new Set());
+  const [consumedSet, setConsumedSet] = useState<Set<string>>(new Set());
   const refs = useRef<Record<string, HTMLElement | null>>({});
   const inkCleanups = useRef<Record<string, (() => void) | undefined>>({});
   const searchRef = useRef<HTMLInputElement>(null);
@@ -556,13 +558,18 @@ export default function ReaderPage() {
         const next = new Set(prev);
         if (next.has(id)) {
           next.delete(id);
-          // Sync removal to Supabase
           removeRemoteReadMark(id);
         } else {
           next.add(id);
-          // Sync addition to Supabase
           addRemoteReadMark(id, digestDateRef.current);
-          // Collapse Claude's take if it's currently expanded
+
+          // Always: brief "consumed" pulse animation
+          setConsumedSet((cs) => { const n = new Set(cs); n.add(id); return n; });
+          setTimeout(() => {
+            setConsumedSet((cs) => { const n = new Set(cs); n.delete(id); return n; });
+          }, 600);
+
+          // Collapse Claude's take if expanded
           setExpandedSet((ep) => {
             if (!ep.has(id)) return ep;
             const ne = new Set(ep);
@@ -577,12 +584,20 @@ export default function ReaderPage() {
             }, 400);
             return ne;
           });
+
+          // When hide-read is active: fold-away departure after pulse
+          if (hideRead) {
+            setDepartingSet((ds) => { const n = new Set(ds); n.add(id); return n; });
+            setTimeout(() => {
+              setDepartingSet((ds) => { const n = new Set(ds); n.delete(id); return n; });
+            }, 900); // matches CSS fold duration
+          }
         }
         saveReadSet(next);
         return next;
       });
     },
-    []
+    [hideRead]
   );
 
   // Fetch a Claude take on demand (or use pre-generated/cached one)
@@ -704,14 +719,14 @@ export default function ReaderPage() {
     const maxT = timeFilter === "all" ? Infinity : parseInt(timeFilter, 10);
     for (const s of data.streams) {
       out[s.id] = (data.stories[s.id] || []).filter((st) => {
-        if (hideRead && readSet.has(st.id)) return false;
+        if (hideRead && readSet.has(st.id) && !departingSet.has(st.id)) return false;
         if (st.readTime > maxT) return false;
         if (!qq) return true;
         return `${st.title} ${st.summary} ${st.take}`.toLowerCase().includes(qq);
       });
     }
     return out;
-  }, [data, q, timeFilter, hideRead, readSet]);
+  }, [data, q, timeFilter, hideRead, readSet, departingSet]);
 
   const counts = useMemo(() => {
     const out: Record<string, number> = {};
@@ -1075,6 +1090,8 @@ export default function ReaderPage() {
                               readSet.has(story.id) ? styles.storyRead : "",
                               isExpanded ? styles.storyExpanded : "",
                               isCollapsing ? styles.storyCollapsing : "",
+                              consumedSet.has(story.id) ? styles.storyConsumed : "",
+                              departingSet.has(story.id) ? styles.storyDeparting : "",
                             ].filter(Boolean).join(" ")}
                             style={{ "--stream-color": sc(s.id) } as React.CSSProperties}
                             onClick={(e) => {
