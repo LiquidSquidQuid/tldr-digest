@@ -624,6 +624,20 @@ export default function ReaderPage() {
     [takesMap]
   );
 
+  // Fire ink animation for a story card (called when take is ready)
+  const fireInk = useCallback((id: string) => {
+    // Don't double-fire
+    if (inkCleanups.current[id]) return;
+    requestAnimationFrame(() => {
+      const canvas = document.querySelector(
+        `[data-ink-id="${id}"]`
+      ) as HTMLCanvasElement | null;
+      if (canvas) {
+        inkCleanups.current[id] = animateInkSpill(canvas);
+      }
+    });
+  }, []);
+
   const toggleExpand = useCallback((id: string) => {
     setExpandedSet((prev) => {
       const next = new Set(prev);
@@ -645,19 +659,32 @@ export default function ReaderPage() {
         if (data?.storyById[id]) {
           fetchTake(data.storyById[id]);
         }
-        // Kick off ink animation after DOM updates
-        requestAnimationFrame(() => {
-          const canvas = document.querySelector(
-            `[data-ink-id="${id}"]`
-          ) as HTMLCanvasElement | null;
-          if (canvas) {
-            inkCleanups.current[id] = animateInkSpill(canvas);
-          }
-        });
+        // Only fire ink immediately if take is already available
+        const story = data?.storyById[id];
+        const existingTake = story?.take || takesMap[id];
+        if (existingTake && existingTake !== "__loading__" && existingTake !== "__error__") {
+          fireInk(id);
+        }
+        // Otherwise, ink fires when take arrives (via useEffect below)
       }
       return next;
     });
-  }, [data, fetchTake]);
+  }, [data, fetchTake, takesMap, fireInk]);
+
+  // Watch for takes resolving — fire ink animation when a loading take arrives
+  const prevTakesRef = useRef<Record<string, string>>({});
+  useEffect(() => {
+    for (const [id, value] of Object.entries(takesMap)) {
+      const prev = prevTakesRef.current[id];
+      // Transition from loading → actual take text
+      if (prev === "__loading__" && value && value !== "__loading__" && value !== "__error__") {
+        if (expandedSet.has(id)) {
+          fireInk(id);
+        }
+      }
+    }
+    prevTakesRef.current = { ...takesMap };
+  }, [takesMap, expandedSet, fireInk]);
 
   const jumpTo = useCallback((id: string) => {
     const el = refs.current[id];
@@ -1111,7 +1138,7 @@ export default function ReaderPage() {
                                   <div className={styles.takeInner}>
                                     <div className={styles.take}>
                                       <canvas
-                                        className={styles.inkCanvas}
+                                        className={`${styles.inkCanvas}${isLoading ? ` ${styles.inkCanvasLoading}` : ""}`}
                                         data-ink-id={story.id}
                                       />
                                       <div className={styles.takeContent}>

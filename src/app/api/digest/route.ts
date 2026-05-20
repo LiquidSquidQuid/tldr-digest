@@ -9,7 +9,7 @@ import * as cheerio from "cheerio";
    picks via Sonnet, and seeds Supabase. No Gmail, no laptop.
    ══════════════════════════════════════════════════════════════ */
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 export const dynamic = "force-dynamic";
 
 // ── Config ──
@@ -41,6 +41,34 @@ interface SectionBlock {
   stream_name: string;
   section_name: string;
   stories: ParsedStory[];
+}
+
+// ── Stable story ID (must match client-side stableStoryId in page.tsx) ──
+// Maps stream_name → canonical stream id used in ID generation
+const STREAM_ID_MAP: Record<string, string> = {
+  "TLDR": "tldr",
+  "TLDR AI": "ai",
+  "TLDR Dev": "dev",
+  "TLDR Information Security": "infosec",
+  "TLDR IT": "it",
+  "TLDR Fintech": "fintech",
+  "TLDR Design": "design",
+  "TLDR Crypto": "crypto",
+  "TLDR Founders": "founders",
+  "TLDR Marketing": "marketing",
+  "TLDR DevOps": "devops",
+  "TLDR Data": "data",
+  "Hacker News": "hn",
+};
+
+function stableStoryId(title: string, streamName: string, date: string): string {
+  const streamId = STREAM_ID_MAP[streamName] || streamName.toLowerCase().replace(/\s+/g, "-");
+  const input = `${streamId}::${date}::${title}`;
+  let h = 5381;
+  for (let i = 0; i < input.length; i++) {
+    h = ((h << 5) + h + input.charCodeAt(i)) >>> 0;
+  }
+  return `d-${streamId}-${h.toString(16)}`;
 }
 
 // ── TLDR Stream Definitions ──
@@ -548,6 +576,106 @@ async function seedSupabase(
   return inserted;
 }
 
+// ══════════════════════════════════════════════════════════════
+// Pre-generate takes for picked stories
+// ══════════════════════════════════════════════════════════════
+
+const TAKE_SYSTEM_PROMPT = `You are Claude, writing sharp analytical takes on news stories for a tech-savvy reader. The reader is a Laboratory Operations Manager at a major medical center (120+ staff, nine lab departments), a serial entrepreneur, and a Next.js/Supabase developer.
+
+Write a 2-3 paragraph take (150-200 words):
+- Paragraph 1: What happened and why it matters. Go beyond the headline.
+- Paragraph 2: Connect it to the reader's world — healthcare operations, lab management, compliance, workforce, automation, or their dev/entrepreneurial side. If tenuous, focus on broader leadership or technology angle.
+- Paragraph 3: Forward-looking — what to watch for, what action this might trigger.
+
+Direct, intelligent tone. No fluff, no "In conclusion." Assume the reader is sharp and busy.`;
+
+async function preGenerateTakes(
+  blocks: SectionBlock[],
+  picks: Map<string, number>,
+  date: string
+): Promise<number> {
+  if (!ANTHROPIC_API_KEY || picks.size === 0) return 0;
+
+  // Collect picked stories with their metadata
+  const pickedStories: { storyId: string; title: string; summary: string; streamName: string; section: string; url: string }[] = [];
+  for (const block of blocks) {
+    for (const story of block.stories) {
+      if (picks.has(story.link)) {
+        pickedStories.push({
+          storyId: stableStoryId(story.title, block.stream_name, date),
+          title: story.title,
+          summary: story.summary,
+          streamName: block.stream_name,
+          section: block.section_name,
+          url: story.link,
+        });
+      }
+    }
+  }
+
+  let generated = 0;
+  for (const ps of pickedStories) {
+    try {
+      // Check if take already cached
+      const checkRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/story_takes?story_id=eq.${encodeURIComponent(ps.storyId)}&select=take`,
+        { headers: SB_HEADERS }
+      );
+      if (checkRes.ok) {
+        const rows = await checkRes.json();
+        if (rows.length > 0 && rows[0].take) {
+          generated++; // Already cached
+          continue;
+        }
+      }
+
+      // Generate take via Anthropic
+      const userMessage = `Story from ${ps.section} (${ps.streamName} stream):\n\nTitle: ${ps.title}\nSummary: ${ps.summary}\n${ps.url && ps.url !== "#" ? `Source: ${ps.url}` : ""}\n\nWrite your take on this story.`;
+
+      const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 400,
+          system: TAKE_SYSTEM_PROMPT,
+          messages: [{ role: "user", content: userMessage }],
+        }),
+      });
+
+      if (!anthropicRes.ok) {
+        console.error(`Take generation failed for "${ps.title}":`, anthropicRes.status);
+        continue;
+      }
+
+      const result = await anthropicRes.json();
+      const take = result.content?.[0]?.text ?? "";
+      if (!take) continue;
+
+      // Cache to Supabase
+      await fetch(`${SUPABASE_URL}/rest/v1/story_takes`, {
+        method: "POST",
+        headers: { ...SB_HEADERS, Prefer: "resolution=merge-duplicates" },
+        body: JSON.stringify({
+          story_id: ps.storyId,
+          digest_date: date,
+          take,
+        }),
+      });
+
+      generated++;
+    } catch (err) {
+      console.error(`Take pre-gen error for "${ps.title}":`, err);
+    }
+  }
+
+  return generated;
+}
+
 // Check if picks already exist for today
 async function picksExistForToday(date: string): Promise<boolean> {
   try {
@@ -639,6 +767,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   // 5. Seed Supabase (additive — only new stories)
   const inserted = await seedSupabase(newBlocks, picks, date);
   log.push(`Inserted ${inserted} stories into Supabase`);
+
+  // 6. Pre-generate takes for picked stories (so they're instant on open)
+  if (picks.size > 0) {
+    const takesGenerated = await preGenerateTakes(newBlocks, picks, date);
+    log.push(`Pre-generated ${takesGenerated}/${picks.size} takes for top picks`);
+  }
 
   return NextResponse.json({ ok: true, date, inserted, removed, log });
 }
