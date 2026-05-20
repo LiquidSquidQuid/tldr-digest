@@ -325,14 +325,20 @@ interface RawRow {
 
 async function fetchDigest(): Promise<DigestData | null> {
   const headers = { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` };
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
 
-  let res = await fetch(
-    `${SUPABASE_URL}/rest/v1/digest_entries?digest_date=eq.${today}&select=*`,
+  // Rolling 7-day window: fetch past 7 days of stories
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 6);
+  const windowStart = weekAgo.toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/digest_entries?digest_date=gte.${windowStart}&digest_date=lte.${today}&select=*&order=digest_date.desc`,
     { headers }
   );
   let rows: RawRow[] = await res.json();
 
+  // Fallback: if nothing in window, grab the latest available date
   if (!rows || rows.length === 0) {
     const latestRes = await fetch(
       `${SUPABASE_URL}/rest/v1/digest_entries?select=digest_date&order=digest_date.desc&limit=1`,
@@ -340,17 +346,19 @@ async function fetchDigest(): Promise<DigestData | null> {
     );
     const latestRows = await latestRes.json();
     if (!latestRows || latestRows.length === 0) return null;
-    res = await fetch(
+    const fallbackRes = await fetch(
       `${SUPABASE_URL}/rest/v1/digest_entries?digest_date=eq.${latestRows[0].digest_date}&select=*`,
       { headers }
     );
-    rows = await res.json();
+    rows = await fallbackRes.json();
   }
 
   if (!rows || rows.length === 0) return null;
 
-  const digestDate = rows[0].digest_date;
-  // Sort by canonical stream order — resolve alias to index
+  // Most recent date is the "primary" date for display
+  const latestDate = rows.reduce((max, r) => r.digest_date > max ? r.digest_date : max, rows[0].digest_date);
+
+  // Sort by canonical stream order
   const streamIdx = (name: string): number => {
     const cfg = STREAMS_MAP[name] || STREAMS_MAP[name.toLowerCase()];
     if (!cfg) return 99;
@@ -363,6 +371,7 @@ async function fetchDigest(): Promise<DigestData | null> {
   const allStories: Story[] = [];
   const storyById: Record<string, Story> = {};
   const topPicks: Story[] = [];
+  const seenTitles = new Set<string>(); // dedup across days
   let total = 0;
   let totalMin = 0;
 
@@ -379,8 +388,13 @@ async function fetchDigest(): Promise<DigestData | null> {
       stories[cfg.id] = [];
     }
     for (const raw of row.stories || []) {
+      // Dedup: same title across multiple days keeps the newest
+      const dedupKey = `${cfg.id}::${raw.title}`;
+      if (seenTitles.has(dedupKey)) continue;
+      seenTitles.add(dedupKey);
+
       const readTime = parseReadTime(raw.read_time);
-      const id = stableStoryId(raw.title || "", cfg.id, digestDate);
+      const id = stableStoryId(raw.title || "", cfg.id, row.digest_date);
       const story: Story = {
         id,
         streamId: cfg.id,
@@ -391,11 +405,13 @@ async function fetchDigest(): Promise<DigestData | null> {
         url: raw.link || "",
         readTime,
         pickRank: raw.pick_rank || null,
+        digestDate: row.digest_date,
       };
       stories[cfg.id].push(story);
       allStories.push(story);
       storyById[id] = story;
-      if (story.pickRank) topPicks.push(story);
+      // Only today's picks show in the top picks carousel
+      if (story.pickRank && row.digest_date === latestDate) topPicks.push(story);
       total++;
       totalMin += readTime;
     }
@@ -404,8 +420,8 @@ async function fetchDigest(): Promise<DigestData | null> {
   topPicks.sort((a, b) => (a.pickRank || 99) - (b.pickRank || 99));
 
   return {
-    date: digestDate,
-    dayLabel: formatDate(digestDate),
+    date: latestDate,
+    dayLabel: formatDate(latestDate),
     streams,
     stories,
     allStories,
@@ -439,6 +455,10 @@ export default function ReaderPage() {
   // On-demand Claude takes: storyId → take text (or "loading" sentinel)
   const [takesMap, setTakesMap] = useState<Record<string, string>>({});
   const takesInFlight = useRef<Set<string>>(new Set());
+  // Tracks stories where loading exceeded cache-response threshold,
+  // meaning Sonnet is actively generating (not a Supabase cache hit)
+  const [generatingSet, setGeneratingSet] = useState<Set<string>>(new Set());
+  const generatingTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   // Store digest date for remote sync calls
   const digestDateRef = useRef<string>("");
@@ -561,7 +581,8 @@ export default function ReaderPage() {
           removeRemoteReadMark(id);
         } else {
           next.add(id);
-          addRemoteReadMark(id, digestDateRef.current);
+          const storyDate = data?.storyById[id]?.digestDate || digestDateRef.current;
+          addRemoteReadMark(id, storyDate);
 
           // Always: brief "consumed" pulse animation
           setConsumedSet((cs) => { const n = new Set(cs); n.add(id); return n; });
@@ -597,7 +618,7 @@ export default function ReaderPage() {
         return next;
       });
     },
-    [hideRead]
+    [hideRead, data]
   );
 
   // Fetch a Claude take on demand (or use pre-generated/cached one)
@@ -612,6 +633,12 @@ export default function ReaderPage() {
       takesInFlight.current.add(id);
       setTakesMap((prev) => ({ ...prev, [id]: "__loading__" }));
 
+      // If response doesn't arrive within 800ms, it's a fresh Sonnet
+      // generation — escalate the shimmer to "generating" state
+      generatingTimers.current[id] = setTimeout(() => {
+        setGeneratingSet((gs) => { const n = new Set(gs); n.add(id); return n; });
+      }, 800);
+
       fetch("/api/take", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -622,7 +649,7 @@ export default function ReaderPage() {
           streamId: story.streamId,
           section: story.section,
           url: story.url,
-          digestDate: digestDateRef.current,
+          digestDate: story.digestDate || digestDateRef.current,
         }),
       })
         .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
@@ -634,6 +661,10 @@ export default function ReaderPage() {
         })
         .finally(() => {
           takesInFlight.current.delete(id);
+          // Clear the escalation timer and generating state
+          clearTimeout(generatingTimers.current[id]);
+          delete generatingTimers.current[id];
+          setGeneratingSet((gs) => { const n = new Set(gs); n.delete(id); return n; });
         });
     },
     [takesMap]
@@ -1155,7 +1186,7 @@ export default function ReaderPage() {
                                   <div className={styles.takeInner}>
                                     <div className={styles.take}>
                                       <canvas
-                                        className={`${styles.inkCanvas}${isLoading ? ` ${styles.inkCanvasLoading}` : ""}`}
+                                        className={`${styles.inkCanvas}${isLoading ? (generatingSet.has(story.id) ? ` ${styles.inkCanvasGenerating}` : ` ${styles.inkCanvasLoading}`) : ""}`}
                                         data-ink-id={story.id}
                                       />
                                       <div className={styles.takeContent}>
@@ -1164,10 +1195,13 @@ export default function ReaderPage() {
                                           Claude&apos;s take
                                         </div>
                                         {isLoading && (
-                                          <div className={styles.takeLoading}>
+                                          <div className={`${styles.takeLoading} ${generatingSet.has(story.id) ? styles.takeLoadingActive : ""}`}>
                                             <span className={styles.takeLoadingDot} />
                                             <span className={styles.takeLoadingDot} />
                                             <span className={styles.takeLoadingDot} />
+                                            <span className={styles.takeLoadingLabel}>
+                                              {generatingSet.has(story.id) ? "generating" : "fetching"}
+                                            </span>
                                           </div>
                                         )}
                                         {isError && (

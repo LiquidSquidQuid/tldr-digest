@@ -25,6 +25,7 @@ export interface Story {
   url: string;
   readTime: number;
   pickRank: number | null;
+  digestDate: string; // YYYY-MM-DD — which day this story was fetched
 }
 
 export interface Stream {

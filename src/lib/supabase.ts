@@ -126,6 +126,7 @@ export async function fetchDigest(): Promise<DigestData | null> {
         url: rawStory.link || "",
         readTime,
         pickRank: rawStory.pick_rank || null,
+        digestDate: row.digest_date,
       };
 
       stories[cfg.id].push(story);
