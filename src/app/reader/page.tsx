@@ -439,7 +439,7 @@ export default function ReaderPage() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [timeFilter, setTimeFilter] = useState("all");
-  const [hideRead, setHideRead] = useState(true);
+  const [hideRead, setHideRead] = useState(false);
   const [activeStream, setActiveStream] = useState<string | null>(null);
   const [readSet, setReadSet] = useState<Set<string>>(new Set());
   const [expandedSet, setExpandedSet] = useState<Set<string>>(new Set());
@@ -1057,7 +1057,7 @@ export default function ReaderPage() {
                     className={`${styles.chip} ${hideRead ? styles.chipOn : ""}`}
                     onClick={() => setHideRead((h) => !h)}
                   >
-                    {hideRead ? "read hidden" : "show all"}
+                    {hideRead ? "showing unread" : "hide read stories"}
                   </button>
                   {[
                     ["all", "all"],
