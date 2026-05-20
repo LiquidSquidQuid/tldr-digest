@@ -63,7 +63,8 @@ const TLDR_STREAMS: { slug: string; stream_name: string }[] = [
 // ── Utility ──
 
 function today(): string {
-  return new Date().toISOString().split("T")[0];
+  // Use Pacific Time so the date matches newsletter publication dates
+  return new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
 }
 
 function clampReadTime(text: string): number {
@@ -98,57 +99,77 @@ function parseTLDRPage(html: string, streamName: string): SectionBlock[] {
   let currentSection = "Headlines";
   let currentStories: ParsedStory[] = [];
 
-  // TLDR pages use a consistent structure: section headers as standalone
-  // text elements, stories as linked headlines with "(X minute read)"
-  const contentArea = $("article, .content, main, body").first();
-  const elements = contentArea.find("h3, h2, p, a");
+  // TLDR page structure (verified May 2026):
+  //   <header><h3>Section Name</h3></header>
+  //   <article class="mt-3">
+  //     <a href="..." class="font-bold"><h3>Title (X minute read)</h3></a>
+  //     <div class="newsletter-html">Summary paragraph</div>
+  //   </article>
 
-  // Walk through all heading-level elements to find stories
-  contentArea.find("h3").each((_, el) => {
-    const $el = $(el);
-    const $link = $el.find("a").first();
+  // Track section headers — they live inside <header> elements
+  $("header h3").each((_, el) => {
+    const text = $(el).text().trim();
+    if (!text || text.length <= 2) return;
+    // Skip emoji-only headers
+    if (/^[\p{Emoji}\s]+$/u.test(text)) return;
 
-    if ($link.length === 0) {
-      // Section header (no link) — e.g., "Big Tech & Startups"
-      const text = $el.text().trim();
-      // Skip emoji-only headers
-      if (text.length > 2 && !/^[\p{Emoji}\s]+$/u.test(text)) {
-        // Save previous section if it has stories
-        if (currentStories.length > 0) {
-          blocks.push({
-            stream_name: streamName,
-            section_name: currentSection,
-            stories: currentStories,
-          });
-        }
-        currentSection = text;
-        currentStories = [];
-      }
-      return;
+    // Save previous section if it has stories
+    if (currentStories.length > 0) {
+      blocks.push({
+        stream_name: streamName,
+        section_name: currentSection,
+        stories: currentStories,
+      });
+      currentStories = [];
     }
+    currentSection = text;
+  });
+
+  // Extract stories from <article> elements
+  $("article").each((_, el) => {
+    const $article = $(el);
+    const $link = $article.find("a").first();
+    if ($link.length === 0) return;
+
+    const href = $link.attr("href") || "";
+    if (!href || href === "#") return;
 
     const linkText = $link.text().trim();
-    const href = $link.attr("href") || "";
 
     // Skip sponsors
     if (linkText.includes("(Sponsor)") || linkText.includes("Sponsor")) return;
-    // Skip "Quick Links" section label links and empty links
-    if (!href || href === "#") return;
 
-    // Extract read time from title text like "Title (4 minute read)"
+    // Extract read time from "Title (4 minute read)" pattern
     const readTimeMatch = linkText.match(/\((\d+)\s*minute\s*read\)/i);
     const title = linkText.replace(/\s*\(\d+\s*minute\s*read\)\s*/i, "").trim();
     if (!title) return;
 
     const readTime = readTimeMatch ? Math.min(parseInt(readTimeMatch[1], 10), 8) : 3;
 
-    // Summary is the next sibling paragraph
+    // Summary lives in <div class="newsletter-html"> sibling
     let summary = "";
-    const $next = $el.next("p, div");
-    if ($next.length > 0) {
-      summary = $next.text().trim();
-      // Skip if it looks like another story link or nav
+    const $desc = $article.find(".newsletter-html, div").first();
+    if ($desc.length > 0) {
+      summary = $desc.text().trim();
       if (summary.length < 10) summary = "";
+    }
+
+    // Determine which section this article belongs to by position
+    // Find the closest preceding <header> sibling
+    const $prev = $article.prevAll("header").first();
+    if ($prev.length > 0) {
+      const sectionText = $prev.find("h3").text().trim();
+      if (sectionText && sectionText !== currentSection && sectionText.length > 2) {
+        if (currentStories.length > 0) {
+          blocks.push({
+            stream_name: streamName,
+            section_name: currentSection,
+            stories: currentStories,
+          });
+          currentStories = [];
+        }
+        currentSection = sectionText;
+      }
     }
 
     currentStories.push({
